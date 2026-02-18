@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		355261AD2F44C388002D683D /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 355261AC2F44C388002D683D /* Inject */; };
+		359015AC2F29947B000F17FC /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 359015AB2F29947B000F17FC /* MarkdownUI */; };
+		359015B12F299529000F17FC /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 359015B02F299529000F17FC /* RevenueCat */; };
+		359015B32F299529000F17FC /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 359015B22F299529000F17FC /* RevenueCatUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		35AD42DC2F271E0700AA5470 /* Medication Sidekick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Medication Sidekick.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -14,7 +21,7 @@
 		35AD42E92F271E0800AA5470 /* Exceptions for "Medication Sidekick" folder in "Medication Sidekick" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Lifecycle/Info.plist,
 			);
 			target = 35AD42DB2F271E0700AA5470 /* Medication Sidekick */;
 		};
@@ -36,6 +43,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				359015B32F299529000F17FC /* RevenueCatUI in Frameworks */,
+				359015AC2F29947B000F17FC /* MarkdownUI in Frameworks */,
+				359015B12F299529000F17FC /* RevenueCat in Frameworks */,
+				355261AD2F44C388002D683D /* Inject in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +89,10 @@
 			);
 			name = "Medication Sidekick";
 			packageProductDependencies = (
+				359015AB2F29947B000F17FC /* MarkdownUI */,
+				359015B02F299529000F17FC /* RevenueCat */,
+				359015B22F299529000F17FC /* RevenueCatUI */,
+				355261AC2F44C388002D683D /* Inject */,
 			);
 			productName = "Medication Sidekick";
 			productReference = 35AD42DC2F271E0700AA5470 /* Medication Sidekick.app */;
@@ -107,6 +122,11 @@
 			);
 			mainGroup = 35AD42D32F271E0700AA5470;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				359015AA2F29947B000F17FC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				359015AD2F299529000F17FC /* XCRemoteSwiftPackageReference "purchases-ios" */,
+				355261AB2F44C388002D683D /* XCRemoteSwiftPackageReference "Inject" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 35AD42DD2F271E0700AA5470 /* Products */;
 			projectDirPath = "";
@@ -143,29 +163,35 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Medication Sidekick/Medication_Sidekick.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Medication Sidekick/Lifecycle/Medication_Sidekick.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4X7DCR4G6X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Medication Sidekick/Info.plist";
+				INFOPLIST_FILE = "Medication Sidekick/Lifecycle/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alanashton.-TestSplitNav.Medication-Sidekick";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -177,18 +203,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Medication Sidekick/Medication_Sidekick.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Medication Sidekick/Lifecycle/Medication_Sidekick.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4X7DCR4G6X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Medication Sidekick/Info.plist";
+				INFOPLIST_FILE = "Medication Sidekick/Lifecycle/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -197,9 +224,13 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alanashton.-TestSplitNav.Medication-Sidekick";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -349,6 +380,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		355261AB2F44C388002D683D /* XCRemoteSwiftPackageReference "Inject" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krzysztofzablocki/Inject.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.2;
+			};
+		};
+		359015AA2F29947B000F17FC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		359015AD2F299529000F17FC /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.56.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		355261AC2F44C388002D683D /* Inject */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 355261AB2F44C388002D683D /* XCRemoteSwiftPackageReference "Inject" */;
+			productName = Inject;
+		};
+		359015AB2F29947B000F17FC /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 359015AA2F29947B000F17FC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		359015B02F299529000F17FC /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 359015AD2F299529000F17FC /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		359015B22F299529000F17FC /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 359015AD2F299529000F17FC /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 35AD42D42F271E0700AA5470 /* Project object */;
 }
