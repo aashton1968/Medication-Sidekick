@@ -93,9 +93,7 @@ struct HomeView: View {
         })
         
         .task {
-            loadSchedules()
-            generateSchedulesIfNeeded()
-            
+            await loadSchedulesAndGenerateDoses()
             if navigationRouter.path.isEmpty {
                 navigationRouter.navigate(.todayView)
             }
@@ -158,33 +156,23 @@ struct HomeView: View {
     }
     
     @MainActor
-    private func loadSchedules() {
+    private func loadSchedulesAndGenerateDoses() async {
         let now = Date()
-
         let descriptor = FetchDescriptor<MedicationSchedule>()
-
         do {
             let allSchedules = try modelContext.fetch(descriptor)
-
             schedules = allSchedules.filter { schedule in
-                schedule.endDate == nil || schedule.endDate! >= now
+                guard let end = schedule.endDate else { return true }
+                return end >= now
             }
-        } catch {
-            os_log(.error, "Failed to load schedules: %{public}@", error.localizedDescription)
-        }
-    }
-    
-    @MainActor
-    private func generateSchedulesIfNeeded() {
-        for schedule in schedules {
-            do {
-                try MedicationDoseGenerator.generateUpcomingDoses(
+            for schedule in schedules {
+                try? MedicationDoseGenerator.generateUpcomingDoses(
                     for: schedule,
                     modelContext: modelContext
                 )
-            } catch {
-                os_log(.error, "Dose generation failed: %{public}@", error.localizedDescription)
             }
+        } catch {
+            os_log(.error, "Failed to load schedules: %{public}@", error.localizedDescription)
         }
     }
 }

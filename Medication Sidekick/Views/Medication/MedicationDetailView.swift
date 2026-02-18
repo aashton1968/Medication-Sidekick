@@ -5,11 +5,6 @@
 //  Created by Alan Ashton on 2026-02-16.
 //
 
-//
-//  MedicationDetailView.swift
-//  Medication Sidekick
-//
-
 import SwiftUI
 import SwiftData
 
@@ -26,6 +21,7 @@ struct MedicationDetailView: View {
     
     // MARK: - State
     @State private var showDeleteConfirm = false
+    @State private var deleteError: String?
     
     var body: some View {
         
@@ -36,7 +32,7 @@ struct MedicationDetailView: View {
                 Text(medication.name)
                     .font(.title2.bold())
                 
-                Text("\(medication.dosage) mg")
+                Text(medication.dosage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -110,17 +106,27 @@ struct MedicationDetailView: View {
         } message: {
             Text("Are you sure you want to delete this medication?")
         }
+        .alert("Delete Failed", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK") { deleteError = nil }
+        } message: {
+            if let deleteError {
+                Text(deleteError)
+            }
+        }
     }
-    
+
     // MARK: - Actions
+    @MainActor
     private func deleteMedication() {
         modelContext.delete(medication)
-        
         do {
             try modelContext.save()
             dismiss()
         } catch {
-            print("❌ Failed to delete medication: \(error)")
+            deleteError = error.localizedDescription
         }
     }
 }
