@@ -11,25 +11,75 @@ import SwiftData
 struct MedicationSchedulesView: View {
 
     @Environment(\.modelContext) private var modelContext
-
+    @Environment(ThemeManager.self) var themeManager
+    
     @Query(sort: \MedicationSchedule.startDate)
     private var schedules: [MedicationSchedule]
 
+    private var groupedSchedules: [String: [MedicationSchedule]] {
+        Dictionary(grouping: schedules.flatMap { schedule in
+            schedule.times.map { (schedule, $0) }
+        }) { (_, components) in
+            let hour = components.hour ?? 0
+
+            switch hour {
+            case 5..<12: return "Morning"
+            case 12..<17: return "Afternoon"
+            case 17..<22: return "Evening"
+            default: return "Night"
+            }
+        }
+        .mapValues { pairs in
+            pairs.map { $0.0 }
+        }
+    }
+
     var body: some View {
+        
         List {
-            if schedules.isEmpty {
+            if groupedSchedules.isEmpty {
                 ContentUnavailableView(
                     "No Schedules",
                     systemImage: "calendar.badge.plus",
                     description: Text("You haven’t created any medication schedules yet.")
                 )
             } else {
-                ForEach(schedules) { schedule in
-                    ScheduleRowView(schedule: schedule)
+                ForEach(groupedSchedules.keys.sorted(), id: \.self) { key in
+                    Section(header: Text(key)) {
+                        ForEach(groupedSchedules[key] ?? []) { schedule in
+                            ScheduleRowView(schedule: schedule)
+                        }
+                    }
                 }
             }
         }
+        
         .navigationTitle("Schedules")
+        .navigationBarTitleDisplayMode(.inline)
+        
+        // Context menu
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    /*
+                    Button {
+                        showAbout = true
+                    } label: {
+                        Label("About", systemImage: "info.circle")
+                    }
+                     */
+                    
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(themeManager.selectedTheme.toolbarButtonAccentColor)
+                        .accessibilityLabel("More")
+                }
+            }
+        }
+    
+        .toolbarBackground(Color(themeManager.selectedTheme.toolbarBackgroundColor), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 }
 
