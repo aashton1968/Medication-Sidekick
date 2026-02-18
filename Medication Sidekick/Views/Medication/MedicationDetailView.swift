@@ -42,14 +42,18 @@ struct MedicationDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             
-            // MARK: - Schedules Section (placeholder for now)
+            // MARK: - Schedules Section
             VStack(alignment: .leading, spacing: 8) {
                 
                 Text("Schedules")
                     .font(.headline)
                 
-                Text("No schedules yet")
-                    .foregroundStyle(.secondary)
+                if let schedule = medication.schedule {
+                    scheduleSummary(schedule)
+                } else {
+                    Text("No schedules yet")
+                        .foregroundStyle(.secondary)
+                }
                 
                 Button {
                     // TODO: navigate to schedule creation
@@ -115,6 +119,25 @@ struct MedicationDetailView: View {
             if let deleteError {
                 Text(deleteError)
             }
+        }
+    }
+
+    // MARK: - Helpers
+    @ViewBuilder
+    private func scheduleSummary(_ schedule: MedicationSchedule) -> some View {
+        let timesStr = schedule.times
+            .compactMap { comp -> String? in
+                guard let h = comp.hour, let m = comp.minute else { return nil }
+                let d = Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: Date())
+                return d?.formatted(date: .omitted, time: .shortened)
+            }
+            .joined(separator: ", ")
+        if timesStr.isEmpty {
+            Text("No times set")
+                .foregroundStyle(.secondary)
+        } else {
+            Text(timesStr)
+                .foregroundStyle(.secondary)
         }
     }
 

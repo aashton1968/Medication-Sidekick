@@ -31,7 +31,7 @@ final class NavigationRouter: ObservableObject {
 }
 
 
-// Nagigation Route
+// Navigation Route
 enum Route: Hashable {
     case home
     case todayView

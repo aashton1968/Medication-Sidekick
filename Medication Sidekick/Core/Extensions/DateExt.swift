@@ -1,6 +1,6 @@
 //
-//  DateExtensions.swift
-//  Diabetic Sidekick
+//  DateExt.swift
+//  Medication Sidekick
 //
 //  Created by Alan Ashton on 2024-04-22.
 //
@@ -55,25 +55,14 @@ extension Date {
     }
 
     func UnixDate(unixDate: String) -> Date {
-
-        var myDate: Date = Date()
-
         let pattern = #"Date\((\d+)([+-]\d{4})?\)"#
-        let regex = try! NSRegularExpression(pattern: pattern)
-        guard let match = regex.firstMatch(in: unixDate, range: NSRange(unixDate.startIndex..., in: unixDate)) else {
-            return myDate
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: unixDate, range: NSRange(unixDate.startIndex..., in: unixDate)),
+              let range = Range(match.range(at: 1), in: unixDate),
+              let millis = Double(unixDate[range]) else {
+            return Date()
         }
-
-        // Extract milliseconds:
-        let dateString = unixDate[Range(match.range(at: 1), in: unixDate)!]
-
-        // Convert to UNIX timestamp in seconds:
-        let timeStamp = Double(dateString)! / 1000.0
-
-        // Create Date from timestamp:
-        myDate = Date.init(timeIntervalSince1970: timeStamp)
-
-        return myDate
+        return Date(timeIntervalSince1970: millis / 1000.0)
     }
 
 }

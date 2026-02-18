@@ -13,6 +13,7 @@ struct MedicationBootstrap {
     static func generateTodayEvents(context: ModelContext) throws {
 
         let schedules = try context.fetch(FetchDescriptor<MedicationSchedule>())
+        let existingEvents = try context.fetch(FetchDescriptor<MedicationDoseEvent>())
 
         let calendar = Calendar.current
         let today = Date()
@@ -30,10 +31,7 @@ struct MedicationBootstrap {
                     of: today
                 ) else { continue }
 
-                // Check if already exists
-                let existing = try context.fetch(FetchDescriptor<MedicationDoseEvent>())
-
-                let alreadyExists = existing.contains {
+                let alreadyExists = existingEvents.contains {
                     $0.dose.scheduledDate == scheduledDate &&
                     $0.dose.schedule == schedule
                 }

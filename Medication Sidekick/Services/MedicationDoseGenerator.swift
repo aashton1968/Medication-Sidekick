@@ -1,11 +1,4 @@
 //
-//  MedicationDoseGeneratorService.swift
-//  Medication Sidekick
-//
-//  Created by Alan Ashton on 2026-02-01.
-//
-
-//
 //  MedicationDoseGenerator.swift
 //  Medication Sidekick
 //
@@ -31,6 +24,8 @@ struct MedicationDoseGenerator {
         let sortedTimes = schedule.sortedTimes()
 
         guard !sortedTimes.isEmpty else { return }
+
+        let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
 
         for dayOffset in 0..<daysAhead {
 
@@ -60,14 +55,11 @@ struct MedicationDoseGenerator {
 
                 // Prevent duplicates
                 let startOfMinute = scheduledDate
-                let endOfMinute = calendar.date(
+                guard let endOfMinute = calendar.date(
                     byAdding: .minute,
                     value: 1,
                     to: startOfMinute
-                )!
-
-                // Fetch all doses (SwiftData-safe)
-                let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
+                ) else { continue }
 
                 // Check for duplicates in memory
                 let alreadyExists = allDoses.contains {
