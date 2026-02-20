@@ -32,7 +32,7 @@ protocol ThemeProtocol {
     var toolbarBackgroundColor: Color { get }
     var toolbarForegroundColor : Color { get }
     var buttonBackgroundColor: Color { get }
-    var headerBackgroundColor: Color { get }
+    var cardBackgroundColor: Color { get }
     var headerForegroundColor: Color { get }
     var toolbarButtonAccentColor : Color { get }
     var destructiveButtonColor: Color { get }

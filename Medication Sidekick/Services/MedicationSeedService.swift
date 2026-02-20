@@ -17,7 +17,6 @@ actor MedicationSeedService {
         do {
             let existing = try context.fetch(FetchDescriptor<Medication>())
 
-            // ✅ Prevent duplicates
             if !existing.isEmpty {
                 print("✅ Medications already exist — skipping seed")
                 return
@@ -46,75 +45,71 @@ private extension MedicationSeedService {
 
     func buildDefaultMedications() -> [Medication] {
 
-                                
         return [
 
-            buildMedication(
+            Medication(
                 name: "Valsartan",
                 dosage: "40 mg",
-                times: [DateComponents(hour: 7, minute: 0)]
+                meals: [.breakfast],
+                medicationType: .tablet,
+                currentStock: 45,
+                stockUnit: .tablets
             ),
 
-            buildMedication(
+            Medication(
                 name: "Aspirin (Low Dose)",
                 dosage: "81 mg",
-                times: [DateComponents(hour: 7, minute: 0)]
+                meals: [.breakfast],
+                medicationType: .tablet,
+                currentStock: 90,
+                stockUnit: .tablets
             ),
 
-            buildMedication(
+            Medication(
                 name: "Atorvastatin",
                 dosage: "20 mg",
-                times: [DateComponents(hour: 7, minute: 0)]
+                meals: [.breakfast],
+                medicationType: .tablet,
+                currentStock: 12,
+                stockUnit: .tablets
             ),
 
-            buildMedication(
+            Medication(
                 name: "Rivaroxaban",
                 dosage: "2.5 mg",
-                times: [DateComponents(hour: 7, minute: 0)]
+                meals: [.breakfast],
+                medicationType: .tablet,
+                currentStock: 5,
+                stockUnit: .tablets
             ),
 
-            buildMedication(
+            Medication(
                 name: "Colchicine",
                 dosage: "0.5 mg",
-                times: [DateComponents(hour: 7, minute: 0)]
+                meals: [.breakfast],
+                medicationType: .tablet,
+                currentStock: 28,
+                stockUnit: .tablets
             ),
 
-            buildMedication(
+            Medication(
                 name: "Citalopram",
                 dosage: "20 mg",
-                times: [DateComponents(hour: 20, minute: 0)]
+                meals: [.supper],
+                medicationType: .tablet,
+                currentStock: 60,
+                stockUnit: .tablets
             ),
 
-            buildMedication(
+            Medication(
                 name: "Vitamin / Supplement",
                 dosage: "500 mg",
-                times: [
-                    DateComponents(hour: 8, minute: 0),
-                    DateComponents(hour: 20, minute: 0)
-                ]
+                meals: [.breakfast, .supper],
+                medicationType: .supplement,
+                currentStock: 20,
+                doseQuantity: 1,
+                stockUnit: .tablets
             )
         ]
-    }
-
-    func buildMedication(
-        name: String,
-        dosage: String,
-        times: [DateComponents]
-    ) -> Medication {
-
-        let medication = Medication(
-            name: name,
-            dosage: dosage
-        )
-
-        let schedule = MedicationSchedule(
-            frequency: .daily,
-            times: times,
-            startDate: Calendar.current.startOfDay(for: Date())
-        )
-
-        medication.schedule = schedule
-
-        return medication
     }
 }

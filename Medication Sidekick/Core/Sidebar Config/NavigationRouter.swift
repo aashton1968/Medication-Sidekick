@@ -39,6 +39,7 @@ enum Route: Hashable {
     case medications
     case medication(id: UUID)
     case medicationNew
+    case mealTimeSettings
     case help
 }
 

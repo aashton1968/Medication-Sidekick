@@ -21,6 +21,7 @@ struct SidebarContentView: View {
                 SidebarMenuItemView(icon: "text.rectangle.page", target: .todayView)
                 SidebarMenuItemView(icon: "pill.circle", target: .medications)
                 SidebarMenuItemView(icon: "calendar.circle.fill", target: .medicationSchedule)
+                SidebarMenuItemView(icon: "fork.knife", target: .mealTimeSettings)
                 
             }
             .environmentObject(navigationRouter)
@@ -55,7 +56,7 @@ enum SidebarMenuTargets {
     case todayView
     case medicationSchedule
     case medications
-    
+    case mealTimeSettings
     case help
     
     var title: String {
@@ -64,8 +65,8 @@ enum SidebarMenuTargets {
         case .todayView:  "Today View"
         case .medications: "Medications"
         case .medicationSchedule: "Medication Schedule"
+        case .mealTimeSettings: "Meal Times"
         case .help: "Help"
-        
         }
     }
 }

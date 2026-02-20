@@ -17,7 +17,6 @@ struct HomeView: View {
     
     @State private var showAbout = false
     @State private var sidebarOpen = false
-    @State private var schedules: [MedicationSchedule] = []
     
     let customConfig = SidebarConfiguration(
         width:  270,
@@ -52,7 +51,7 @@ struct HomeView: View {
                                     } icon: {
                                         Image(systemName: "line.3.horizontal")
                                             .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(themeManager.selectedTheme.toolbarForegroundColor)
+                                            .foregroundColor(themeManager.selectedTheme.toolbarButtonAccentColor)
                                             .accessibilityLabel("Menu")
                                     }
                                 }
@@ -93,7 +92,7 @@ struct HomeView: View {
         })
         
         .task {
-            await loadSchedulesAndGenerateDoses()
+            await generateDosesForActiveMedications()
             if navigationRouter.path.isEmpty {
                 navigationRouter.navigate(.todayView)
             }
@@ -129,6 +128,11 @@ struct HomeView: View {
                 .environmentObject(navigationRouter)
                 .environment(themeManager)
 
+        case .mealTimeSettings:
+            MealTimeListView()
+                .environment(themeManager)
+                .environmentObject(navigationRouter)
+
         case .help:
             HelpView()
                 .environment(themeManager)
@@ -156,23 +160,19 @@ struct HomeView: View {
     }
     
     @MainActor
-    private func loadSchedulesAndGenerateDoses() async {
-        let now = Date()
-        let descriptor = FetchDescriptor<MedicationSchedule>()
+    private func generateDosesForActiveMedications() async {
         do {
-            let allSchedules = try modelContext.fetch(descriptor)
-            schedules = allSchedules.filter { schedule in
-                guard let end = schedule.endDate else { return true }
-                return end >= now
-            }
-            for schedule in schedules {
+            let descriptor = FetchDescriptor<Medication>()
+            let allMedications = try modelContext.fetch(descriptor)
+            let active = allMedications.filter { $0.isActive && !$0.mealsRaw.isEmpty }
+            for medication in active {
                 try? MedicationDoseGenerator.generateUpcomingDoses(
-                    for: schedule,
+                    for: medication,
                     modelContext: modelContext
                 )
             }
         } catch {
-            os_log(.error, "Failed to load schedules: %{public}@", error.localizedDescription)
+            os_log(.error, "Failed to generate doses: %{public}@", error.localizedDescription)
         }
     }
 }

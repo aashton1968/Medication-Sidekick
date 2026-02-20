@@ -15,11 +15,18 @@ struct MedicationDetailView: View {
     @EnvironmentObject var navigationRouter: NavigationRouter
     @Environment(ThemeManager.self) var themeManager
     @Environment(\.dismiss) private var dismiss
-    
+
+    @Query(sort: \MealTimeSetting.sortOrder)
+    private var mealTimeSettings: [MealTimeSetting]
+
     // MARK: - Input
     let medication: Medication
     
     // MARK: - State
+    @State private var showEditBasics = false
+    @State private var showEditSchedule = false
+    @State private var showEditStock = false
+    @State private var showEditAll = false
     @State private var showDeleteConfirm = false
     @State private var deleteError: String?
     
@@ -28,47 +35,143 @@ struct MedicationDetailView: View {
         VStack(spacing: 16) {
             
             // MARK: - Header Card
-            VStack(alignment: .leading, spacing: 8) {
-                Text(medication.name)
-                    .font(.title2.bold())
-                
-                Text(medication.dosage)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            Button {
+                showEditBasics = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: medication.medicationType.symbolName)
+                        .font(.title2)
+                        .foregroundStyle(.tint)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(medication.name)
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
+
+                        Text(medication.dosage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        if let instructions = medication.instructions, !instructions.isEmpty {
+                            Text(instructions)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
             }
+            .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(Color(themeManager.selectedTheme.toolbarBackgroundColor))
+            .background(Color(themeManager.selectedTheme.cardBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             
-            // MARK: - Schedules Section
-            VStack(alignment: .leading, spacing: 8) {
-                
-                Text("Schedules")
-                    .font(.headline)
-                
-                if let schedule = medication.schedule {
-                    scheduleSummary(schedule)
-                } else {
-                    Text("No schedules yet")
-                        .foregroundStyle(.secondary)
+            // MARK: - Schedule Section
+            Button {
+                showEditSchedule = true
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Schedule")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+
+                        if medication.mealsRaw.isEmpty {
+                            Text("No meals set")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(medication.mealDisplayNames(settings: mealTimeSettings).joined(separator: ", "))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(medication.frequency.displayName)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        if !medication.isActive {
+                            Text("Inactive")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.red)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
-                
-                Button {
-                    // TODO: navigate to schedule creation
-                } label: {
-                    Label("Add Schedule", systemImage: "plus")
-                }
-                .padding(.top, 4)
-                
             }
+            .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(Color(themeManager.selectedTheme.toolbarBackgroundColor))
+            .background(Color(themeManager.selectedTheme.cardBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            
+
+
+            // MARK: - Stock Section
+            Button {
+                showEditStock = true
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Stock")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            Image(systemName: medication.stockLevel.symbolName)
+                                .foregroundStyle(stockLevelColor(medication.stockLevel))
+
+                            Text(medication.stockLevel.displayName)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(stockLevelColor(medication.stockLevel))
+                        }
+
+                        HStack(spacing: 6) {
+                            Image(systemName: medication.medicationType.symbolName)
+                                .foregroundStyle(.secondary)
+                                .font(.subheadline)
+
+                            Text("\(medication.currentStock) \(medication.stockUnit.displayName)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if medication.currentStock > 0 {
+                            Text("~\(medication.daysOfSupply) days supply")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if medication.doseQuantity > 1 {
+                            Text("\(medication.doseQuantity) \(medication.stockUnit.displayName.lowercased()) per dose")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color(themeManager.selectedTheme.cardBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+
             Spacer()
             
         }
@@ -79,14 +182,13 @@ struct MedicationDetailView: View {
         // MARK: - Toolbar
         .toolbar {
             
-            // Edit (future)
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
-                    
+
                     Button {
-                        // TODO: Edit flow
+                        showEditAll = true
                     } label: {
-                        Label("Edit", systemImage: "pencil")
+                        Label("Edit All", systemImage: "pencil")
                     }
                     
                     Button(role: .destructive) {
@@ -97,8 +199,28 @@ struct MedicationDetailView: View {
                     
                 } label: {
                     Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(themeManager.selectedTheme.cardBackgroundColor)
+                        .accessibilityLabel("More")
                 }
             }
+        }
+        
+        .toolbarBackground(Color(themeManager.selectedTheme.toolbarBackgroundColor), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        
+        // MARK: - Edit Sheets
+        .sheet(isPresented: $showEditBasics) {
+            MedicationEditBasicsSheet(medication: medication)
+        }
+        .sheet(isPresented: $showEditSchedule) {
+            MedicationEditScheduleSheet(medication: medication)
+        }
+        .sheet(isPresented: $showEditStock) {
+            MedicationEditStockSheet(medication: medication)
+        }
+        .sheet(isPresented: $showEditAll) {
+            MedicationEditView(medication: medication)
         }
         
         // MARK: - Delete Confirmation
@@ -123,21 +245,11 @@ struct MedicationDetailView: View {
     }
 
     // MARK: - Helpers
-    @ViewBuilder
-    private func scheduleSummary(_ schedule: MedicationSchedule) -> some View {
-        let timesStr = schedule.times
-            .compactMap { comp -> String? in
-                guard let h = comp.hour, let m = comp.minute else { return nil }
-                let d = Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: Date())
-                return d?.formatted(date: .omitted, time: .shortened)
-            }
-            .joined(separator: ", ")
-        if timesStr.isEmpty {
-            Text("No times set")
-                .foregroundStyle(.secondary)
-        } else {
-            Text(timesStr)
-                .foregroundStyle(.secondary)
+    private func stockLevelColor(_ level: StockLevel) -> Color {
+        switch level {
+        case .good:              return .green
+        case .warning:           return .orange
+        case .critical, .empty:  return .red
         }
     }
 
@@ -162,10 +274,8 @@ struct MedicationDetailView: View {
         let container = try ModelContainer(for: Medication.self, configurations: config)
         let context = container.mainContext
 
-        // Use shared preview data
         try? PreviewData.seed(into: context)
 
-        // Fetch a sample medication
         let descriptor = FetchDescriptor<Medication>()
         let medications = try context.fetch(descriptor)
         let medication = medications.first!

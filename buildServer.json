@@ -12,8 +12,8 @@
 	"argv": [
 		"/opt/homebrew/bin/xcode-build-server"
 	],
-	"workspace": "/Users/alanashton/Library/CloudStorage/Dropbox/xcode projects/Medication Sidekick/Medication Sidekick.xcodeproj/project.xcworkspace",
-	"build_root": "/Users/alanashton/Library/Developer/Xcode/DerivedData/Medication_Sidekick-bjexamvbeflnexftcuwmkmoaogoo",
+	"workspace": "/Volumes/Teema/Home/Library/CloudStorage/Dropbox/xcode projects/Medication Sidekick/Medication Sidekick.xcodeproj/project.xcworkspace",
+	"build_root": "/Volumes/Teema/Home/Library/Developer/Xcode/DerivedData/Medication_Sidekick-gwunvuvvjampmfgrckyddgytvckc",
 	"scheme": "Medication Sidekick",
 	"kind": "xcode"
 }

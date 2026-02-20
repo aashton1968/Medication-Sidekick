@@ -51,8 +51,8 @@ struct Medication_SidekickApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Medication.self,
-            MedicationDoseEvent.self,
-            MedicationSchedule.self
+            MedicationDose.self,
+            MealTimeSetting.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -83,7 +83,10 @@ struct Medication_SidekickApp: App {
                     Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/macOSInjection.bundle")?.load()
                     #endif
                     
-                    // Seed default medications (runs once)
+                    // Seed defaults (runs once per entity)
+                    let mealTimeSeedService = MealTimeSettingSeedService()
+                    await mealTimeSeedService.seedIfNeeded(container: sharedModelContainer)
+
                     let seedService = MedicationSeedService()
                     await seedService.seedIfNeeded(container: sharedModelContainer)
 

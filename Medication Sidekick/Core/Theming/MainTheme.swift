@@ -24,7 +24,7 @@ struct Main: ThemeProtocol {
     
     var buttonBackgroundColor: Color { return Color("mnButtonBackgroundColor") }
     var destructiveButtonColor: Color { return Color("mnDestructiveButtonColor") }
-    var headerBackgroundColor: Color { return Color("mnHeaderBackgroundColor") }
+    var cardBackgroundColor: Color { return Color("mnCardBackgroundColor") }
     var headerForegroundColor: Color { return Color("mnHeaderForegroundColor") }
     
     var toolbarForegroundColor: Color { return Color("mnToolbarForegroundColor") }

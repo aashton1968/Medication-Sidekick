@@ -13,7 +13,7 @@ struct MedicationDoseGenerator {
 
     /// Generates scheduled doses for the next N days (default: 7)
     static func generateUpcomingDoses(
-        for schedule: MedicationSchedule,
+        for medication: Medication,
         daysAhead: Int = 7,
         modelContext: ModelContext
     ) throws {
@@ -21,11 +21,11 @@ struct MedicationDoseGenerator {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        let sortedTimes = schedule.sortedTimes()
-
-        guard !sortedTimes.isEmpty else { return }
+        guard !medication.mealsRaw.isEmpty else { return }
 
         let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
+        let settings = try modelContext.fetch(FetchDescriptor<MealTimeSetting>())
+        let settingsByKey = Dictionary(uniqueKeysWithValues: settings.map { ($0.key, $0) })
 
         for dayOffset in 0..<daysAhead {
 
@@ -35,10 +35,18 @@ struct MedicationDoseGenerator {
                 to: today
             ) else { continue }
 
-            // Respect start / end date
-            guard schedule.isActive(on: day) else { continue }
+            guard medication.isScheduleActive(on: day) else { continue }
 
-            for time in sortedTimes {
+            for mealKey in medication.mealsRaw {
+
+                let time: DateComponents
+                if let setting = settingsByKey[mealKey] {
+                    time = setting.defaultDateComponents
+                } else if let enumCase = MealTime(rawValue: mealKey) {
+                    time = enumCase.defaultDateComponents
+                } else {
+                    continue
+                }
 
                 var components = calendar.dateComponents(
                     [.year, .month, .day],
@@ -53,25 +61,17 @@ struct MedicationDoseGenerator {
                     continue
                 }
 
-                // Prevent duplicates
-                let startOfMinute = scheduledDate
-                guard let endOfMinute = calendar.date(
-                    byAdding: .minute,
-                    value: 1,
-                    to: startOfMinute
-                ) else { continue }
-
-                // Check for duplicates in memory
                 let alreadyExists = allDoses.contains {
-                    $0.schedule == schedule &&
-                    $0.scheduledDate >= startOfMinute &&
-                    $0.scheduledDate < endOfMinute
+                    $0.medication == medication &&
+                    $0.mealTimeRaw == mealKey &&
+                    calendar.isDate($0.scheduledDate, inSameDayAs: scheduledDate)
                 }
 
                 guard !alreadyExists else { continue }
 
                 let dose = MedicationDose(
-                    schedule: schedule,
+                    medication: medication,
+                    mealKey: mealKey,
                     scheduledDate: scheduledDate
                 )
 

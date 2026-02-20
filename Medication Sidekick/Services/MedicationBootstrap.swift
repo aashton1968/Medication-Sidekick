@@ -10,43 +10,54 @@ import Foundation
 
 struct MedicationBootstrap {
 
+    @MainActor
     static func generateTodayEvents(context: ModelContext) throws {
 
-        let schedules = try context.fetch(FetchDescriptor<MedicationSchedule>())
-        let existingEvents = try context.fetch(FetchDescriptor<MedicationDoseEvent>())
+        let medications = try context.fetch(FetchDescriptor<Medication>())
+        let existingDoses = try context.fetch(FetchDescriptor<MedicationDose>())
+        let settings = try context.fetch(FetchDescriptor<MealTimeSetting>())
+        let settingsByKey = Dictionary(uniqueKeysWithValues: settings.map { ($0.key, $0) })
 
         let calendar = Calendar.current
         let today = Date()
 
-        for schedule in schedules {
+        for medication in medications {
 
-            guard schedule.isActive(on: today) else { continue }
+            guard medication.isActive, medication.isScheduleActive(on: today) else { continue }
 
-            for time in schedule.times {
+            for mealKey in medication.mealsRaw {
+
+                let components: DateComponents
+                if let setting = settingsByKey[mealKey] {
+                    components = setting.defaultDateComponents
+                } else if let enumCase = MealTime(rawValue: mealKey) {
+                    components = enumCase.defaultDateComponents
+                } else {
+                    continue
+                }
 
                 guard let scheduledDate = calendar.date(
-                    bySettingHour: time.hour ?? 0,
-                    minute: time.minute ?? 0,
+                    bySettingHour: components.hour ?? 0,
+                    minute: components.minute ?? 0,
                     second: 0,
                     of: today
                 ) else { continue }
 
-                let alreadyExists = existingEvents.contains {
-                    $0.dose.scheduledDate == scheduledDate &&
-                    $0.dose.schedule == schedule
+                let alreadyExists = existingDoses.contains {
+                    $0.mealTimeRaw == mealKey &&
+                    $0.medication == medication &&
+                    Calendar.current.isDate($0.scheduledDate, inSameDayAs: scheduledDate)
                 }
 
                 if alreadyExists { continue }
 
                 let dose = MedicationDose(
-                    schedule: schedule,
+                    medication: medication,
+                    mealKey: mealKey,
                     scheduledDate: scheduledDate
                 )
 
-                let event = MedicationDoseEvent(dose: dose)
-
                 context.insert(dose)
-                context.insert(event)
             }
         }
 

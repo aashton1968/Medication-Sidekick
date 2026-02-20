@@ -174,17 +174,16 @@ extension SidebarMenuTargets {
             return .medications
         case .medicationSchedule:
             return .medicationSchedule
-        
+        case .mealTimeSettings:
+            return .mealTimeSettings
         case .help:
             return .help
-       
         default:
             return nil
         }
     }
 }
 
-// Map SidebarMenuTargets to Route for consistent comparisons/navigation
 private extension SidebarMenuTargets {
     var route: Route {
         switch self {
@@ -192,6 +191,7 @@ private extension SidebarMenuTargets {
         case .todayView: return .todayView
         case .medicationSchedule: return .medicationSchedule
         case .medications: return .medications
+        case .mealTimeSettings: return .mealTimeSettings
         case .help: return .help
         }
     }

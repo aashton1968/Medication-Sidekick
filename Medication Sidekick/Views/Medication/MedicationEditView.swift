@@ -1,14 +1,14 @@
 //
-//  MedicationAddView.swift
+//  MedicationEditView.swift
 //  Medication Sidekick
 //
-//  Created by Alan Ashton on 2026-02-16.
+//  Created by Alan Ashton on 2026-02-18.
 //
 
 import SwiftUI
 import SwiftData
 
-struct MedicationAddView: View {
+struct MedicationEditView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -16,23 +16,40 @@ struct MedicationAddView: View {
     @Query(sort: \MealTimeSetting.sortOrder)
     private var mealTimeSettings: [MealTimeSetting]
 
+    let medication: Medication
+
     // MARK: - Form State
     @State private var name: String = ""
     @State private var dosage: String = ""
     @State private var instructions: String = ""
     @State private var selectedMealKeys: Set<String> = []
-    @State private var medicationType: MedicationType = .tablet
     @State private var frequency: MedicationFrequency = .daily
-    @State private var estimatedDailyDoses: Int = 1
+    @State private var isActive: Bool = true
+    @State private var medicationType: MedicationType = .tablet
     @State private var currentStock: Int = 0
     @State private var doseQuantity: Int = 1
     @State private var stockUnit: StockUnit = .tablets
+    @State private var estimatedDailyDoses: Int = 1
 
     // MARK: - Validation
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
         !dosage.trimmingCharacters(in: .whitespaces).isEmpty &&
         (frequency == .asNeeded || !selectedMealKeys.isEmpty)
+    }
+
+    private var hasChanges: Bool {
+        name != medication.name ||
+        dosage != medication.dosage ||
+        instructions != (medication.instructions ?? "") ||
+        selectedMealKeys != Set(medication.mealsRaw) ||
+        frequency != medication.frequency ||
+        isActive != medication.isActive ||
+        medicationType != medication.medicationType ||
+        currentStock != medication.currentStock ||
+        doseQuantity != medication.doseQuantity ||
+        stockUnit != medication.stockUnit ||
+        estimatedDailyDoses != medication.estimatedDailyDoses
     }
 
     var body: some View {
@@ -68,10 +85,6 @@ struct MedicationAddView: View {
 
                 if frequency != .asNeeded {
                     Section("When to Take") {
-                        Text("Select meals to take with")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-
                         ForEach(mealTimeSettings) { setting in
                             Button {
                                 toggleMeal(setting.key)
@@ -121,15 +134,20 @@ struct MedicationAddView: View {
                         }
                     }
                 }
+
+                Section {
+                    Toggle("Active", isOn: $isActive)
+                }
             }
-            .navigationTitle("New Medication")
+            .navigationTitle("Edit Medication")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         save()
                     }
-                    .disabled(!isValid)
+                    .disabled(!isValid || !hasChanges)
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
@@ -142,30 +160,38 @@ struct MedicationAddView: View {
                 stockUnit = newType.defaultStockUnit
             }
         }
+        .onAppear {
+            name = medication.name
+            dosage = medication.dosage
+            instructions = medication.instructions ?? ""
+            selectedMealKeys = Set(medication.mealsRaw)
+            frequency = medication.frequency
+            isActive = medication.isActive
+            medicationType = medication.medicationType
+            currentStock = medication.currentStock
+            doseQuantity = medication.doseQuantity
+            stockUnit = medication.stockUnit
+            estimatedDailyDoses = medication.estimatedDailyDoses
+        }
     }
 
     // MARK: - Save
     private func save() {
-
-        let orderedKeys = mealTimeSettings
+        medication.name = name
+        medication.dosage = dosage
+        medication.instructions = instructions.isEmpty ? nil : instructions
+        medication.mealsRaw = mealTimeSettings
             .filter { selectedMealKeys.contains($0.key) }
             .map(\.key)
+        medication.frequency = frequency
+        medication.isActive = isActive
+        medication.medicationType = medicationType
+        medication.currentStock = currentStock
+        medication.doseQuantity = doseQuantity
+        medication.stockUnit = stockUnit
+        medication.estimatedDailyDoses = estimatedDailyDoses
+        medication.updatedAt = Date()
 
-        let medication = Medication(
-            name: name,
-            dosage: dosage,
-            instructions: instructions.isEmpty ? nil : instructions,
-            frequency: frequency,
-            startDate: Date(),
-            medicationType: medicationType,
-            currentStock: currentStock,
-            doseQuantity: doseQuantity,
-            stockUnit: stockUnit,
-            estimatedDailyDoses: estimatedDailyDoses
-        )
-        medication.mealsRaw = orderedKeys
-
-        modelContext.insert(medication)
         try? modelContext.save()
         dismiss()
     }
@@ -180,7 +206,13 @@ struct MedicationAddView: View {
     }
 }
 
-#Preview("Medication Add (Sheet)") {
-    MedicationAddView()
-        .modelContainer(PreviewData.container)
+#Preview("Edit Medication") {
+    let container = PreviewData.container
+    let context = container.mainContext
+    let medication = (try? context.fetch(FetchDescriptor<Medication>()))?.first ?? {
+        fatalError("No preview medications")
+    }()
+
+    return MedicationEditView(medication: medication)
+        .modelContainer(container)
 }

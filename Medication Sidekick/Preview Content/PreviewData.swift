@@ -5,24 +5,19 @@
 //  Created by Alan Ashton on 2026-01-27.
 //
 
-
-// In a shared file, e.g., PreviewData.swif
 import Foundation
 import SwiftData
 
-// Preview-only SwiftData container + sample seed data
 @MainActor
 struct PreviewData {
 
-        
-    /// Fresh in-memory container every time it is accessed (more reliable for Xcode Previews than a static-let singleton).
+    /// Fresh in-memory container every time it is accessed
     static var container: ModelContainer {
         do {
             let schema = Schema([
                 Medication.self,
                 MedicationDose.self,
-                MedicationDoseEvent.self,
-                MedicationSchedule.self
+                MealTimeSetting.self
             ])
 
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -39,117 +34,130 @@ struct PreviewData {
     // MARK: - Seed Data
 
     static func seed(into context: ModelContext) {
-        // Build once per preview render; if you ever re-call seed on the same context, you can guard by checking existing data.
 
-        // Example schedules are optional; if MedicationSchedule isn’t ready yet, you can remove these and keep meds only.
-        let metforminSchedule = MedicationSchedule.previewDaily(times: ["08:00", "18:00"])
-        let basalSchedule = MedicationSchedule.previewDaily(times: ["18:00"])
-        let statinSchedule = MedicationSchedule.previewDaily(times: ["08:00"])
-        
+        // Seed meal time settings first
+        let mealTimeDefaults: [(name: String, key: String, hour: Int, minute: Int, sortOrder: Int, symbol: String)] = [
+            ("Pre-Breakfast", "preBreakfast", 6,  30, 0, "clock"),
+            ("Breakfast",     "breakfast",    7,  0,  1, "sunrise"),
+            ("Lunch",         "lunch",        12, 0,  2, "sun.max"),
+            ("Dinner",        "dinner",       18, 30, 3, "sun.haze"),
+            ("Supper",        "supper",       20, 0,  4, "moon.haze"),
+            ("Bed Time",      "bedTime",      22, 30, 5, "moon.zzz"),
+        ]
+
+        var settingsByKey: [String: MealTimeSetting] = [:]
+        for d in mealTimeDefaults {
+            let setting = MealTimeSetting(
+                name: d.name,
+                key: d.key,
+                hour: d.hour,
+                minute: d.minute,
+                sortOrder: d.sortOrder,
+                symbolName: d.symbol
+            )
+            context.insert(setting)
+            settingsByKey[d.key] = setting
+        }
+
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfDay = calendar.startOfDay(for: today)
+
         let meds: [Medication] = [
             Medication(
                 name: "Metformin",
                 dosage: "500 mg",
                 instructions: "Take with meals to reduce stomach upset",
-                isActive: true
+                meals: [.breakfast, .dinner],
+                startDate: startOfDay,
+                medicationType: .tablet,
+                currentStock: 56,
+                stockUnit: .tablets
             ),
             Medication(
                 name: "Vitamin D",
                 dosage: "1,000 IU",
                 instructions: "Once daily in the morning",
-                isActive: true
+                meals: [.breakfast],
+                startDate: startOfDay,
+                medicationType: .supplement,
+                currentStock: 90,
+                stockUnit: .capsules
             ),
             Medication(
                 name: "Atorvastatin",
                 dosage: "20 mg",
                 instructions: "Take at night",
-                isActive: true
+                meals: [.breakfast],
+                startDate: startOfDay,
+                medicationType: .tablet,
+                currentStock: 8,
+                stockUnit: .tablets
             ),
             Medication(
                 name: "Insulin (Basal)",
                 dosage: "18 units",
                 instructions: "Once daily before bed",
-                isActive: true
+                meals: [.supper],
+                startDate: startOfDay,
+                medicationType: .injection,
+                currentStock: 3,
+                stockUnit: .units
             ),
             Medication(
                 name: "Aspirin",
                 dosage: "81 mg",
                 instructions: "Low-dose cardiovascular protection",
-                isActive: false
+                isActive: false,
+                medicationType: .tablet,
+                currentStock: 0,
+                stockUnit: .tablets
             ),
             Medication(
                 name: "Insulin (Bolus)",
                 dosage: "26 units",
                 instructions: "Once daily before bed",
-                isActive: false
+                isActive: false,
+                medicationType: .injection,
+                currentStock: 0,
+                stockUnit: .units
             )
         ]
 
-        // Attach schedules to a couple of meds (safe even if your UI doesn’t show schedules yet)
-        meds.first(where: { $0.name == "Metformin" })?.schedule = metforminSchedule
-        meds.first(where: { $0.name == "Insulin (Basal)" })?.schedule = basalSchedule
-        meds.first(where: { $0.name == "Atorvastatin" })?.schedule = statinSchedule
-
-        context.insert(metforminSchedule)
-        context.insert(basalSchedule)
-        context.insert(statinSchedule)
-
         meds.forEach { context.insert($0) }
 
-        // MARK: - Create Doses + Events (Today)
-
-        let calendar = Calendar.current
-        let today = Date()
+        // MARK: - Create Doses (Today)
 
         for medication in meds {
-            guard let schedule = medication.schedule else { continue }
+            guard medication.isActive else { continue }
 
-            for time in schedule.times {
+            for mealKey in medication.mealsRaw {
+                let components: DateComponents
+                if let setting = settingsByKey[mealKey] {
+                    components = setting.defaultDateComponents
+                } else if let enumCase = MealTime(rawValue: mealKey) {
+                    components = enumCase.defaultDateComponents
+                } else {
+                    continue
+                }
+
                 guard let scheduledDate = calendar.date(
-                    bySettingHour: time.hour ?? 0,
-                    minute: time.minute ?? 0,
+                    bySettingHour: components.hour ?? 0,
+                    minute: components.minute ?? 0,
                     second: 0,
                     of: today
                 ) else { continue }
 
                 let dose = MedicationDose(
-                    schedule: schedule,
+                    medication: medication,
+                    mealKey: mealKey,
                     scheduledDate: scheduledDate
                 )
 
                 context.insert(dose)
-
-                let event = MedicationDoseEvent(dose: dose)
-                context.insert(event)
             }
         }
 
         try? context.save()
-    }
-}
-
-// MARK: - MedicationSchedule Preview Helpers
-
-@MainActor
-fileprivate extension MedicationSchedule {
-    /// Helper to convert "HH:mm" strings to DateComponents (hour, minute)
-    /// and create a realistic daily schedule for previews.
-    static func previewDaily(times: [String]) -> MedicationSchedule {
-        let dateComponents: [DateComponents] = times.compactMap { timeString in
-            let parts = timeString.split(separator: ":")
-            guard parts.count == 2,
-                  let hour = Int(parts[0]),
-                  let minute = Int(parts[1]) else {
-                return nil
-            }
-            return DateComponents(hour: hour, minute: minute)
-        }
-
-        return MedicationSchedule(
-            frequency: .daily,
-            times: dateComponents,
-            startDate: Calendar.current.startOfDay(for: Date()),
-            endDate: nil
-        )
     }
 }

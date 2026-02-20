@@ -11,6 +11,7 @@ import SwiftData
 struct MedicationListView: View {
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(ThemeManager.self) var themeManager
     @EnvironmentObject var navigationRouter: NavigationRouter
     
     @Query(sort: \Medication.name)
@@ -19,56 +20,61 @@ struct MedicationListView: View {
     @State private var showingAdd = false
 
     var body: some View {
-        VStack {
-            List {
+        List {
 
-                if medications.isEmpty {
-                    ContentUnavailableView(
-                        "No Medications",
-                        systemImage: "pills",
-                        description: Text("Tap + to add your first medication")
-                    )
-                }
-
-                ForEach(medications) { medication in
-                    MedicationRow(medication: medication)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            navigationRouter.navigate(.medication(id: medication.id))
-                        }
-                        .contextMenu {
-                            Button {
-                                navigationRouter.navigate(.medication(id: medication.id))
-                            } label: {
-                                Label("View Details", systemImage: "eye")
-                            }
-                            Divider()
-
-                            Button(role: .destructive) {
-                                deleteMedication(medication)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                }
-                .onDelete(perform: delete)
+            if medications.isEmpty {
+                ContentUnavailableView(
+                    "No Medications",
+                    systemImage: "pills",
+                    description: Text("Tap + to add your first medication")
+                )
             }
-            .navigationTitle("Medications")
-            .navigationBarTitleDisplayMode(.inline)
-            
-            .toolbar {
 
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAdd = true
-                    } label: {
-                        Image(systemName: "plus")
+            ForEach(medications) { medication in
+                MedicationRow(medication: medication)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        navigationRouter.navigate(.medication(id: medication.id))
                     }
+                    .contextMenu {
+                        Button {
+                            navigationRouter.navigate(.medication(id: medication.id))
+                        } label: {
+                            Label("View Details", systemImage: "eye")
+                        }
+                        Divider()
+
+                        Button(role: .destructive) {
+                            deleteMedication(medication)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+            }
+            .onDelete(perform: delete)
+        }
+        
+        .navigationTitle("Medications")
+        .navigationBarTitleDisplayMode(.inline)
+        
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showingAdd = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(themeManager.selectedTheme.toolbarButtonAccentColor)
+                        .accessibilityLabel("Add Medication")
                 }
             }
-            .sheet(isPresented: $showingAdd) {
-                MedicationAddView()
-            }
+        }
+        
+        .toolbarBackground(Color(themeManager.selectedTheme.toolbarBackgroundColor), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        
+        .sheet(isPresented: $showingAdd) {
+            MedicationAddView()
         }
     }
 
@@ -104,45 +110,48 @@ struct MedicationListView: View {
 
 struct MedicationRow: View {
 
+    @Query(sort: \MealTimeSetting.sortOrder)
+    private var mealTimeSettings: [MealTimeSetting]
+
     let medication: Medication
 
-    private var schedule: MedicationSchedule? {
-        medication.schedule
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: 12) {
 
-            Text(medication.name)
-                .font(.headline)
+            Image(systemName: medication.medicationType.symbolName)
+                .font(.title3)
+                .foregroundStyle(.tint)
+                .frame(width: 32)
 
-            Text(medication.dosage)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(medication.name)
+                    .font(.headline)
 
-            if let schedule {
-                Text(timeString(from: schedule))
-                    .font(.caption)
+                Text(medication.dosage)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                if !medication.mealsRaw.isEmpty {
+                    Text(medication.mealDisplayNames(settings: mealTimeSettings).joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
+
+            Spacer()
+
+            Image(systemName: medication.stockLevel.symbolName)
+                .foregroundStyle(stockLevelColor(medication.stockLevel))
+                .font(.system(size: 14))
         }
         .padding(.vertical, 4)
     }
 
-    private func timeString(from schedule: MedicationSchedule) -> String {
-        schedule.times
-            .compactMap { comp in
-                if let hour = comp.hour, let minute = comp.minute {
-                    let date = Calendar.current.date(
-                        bySettingHour: hour,
-                        minute: minute,
-                        second: 0,
-                        of: Date()
-                    )
-                    return date?.formatted(date: .omitted, time: .shortened)
-                }
-                return nil
-            }
-            .joined(separator: ", ")
+    private func stockLevelColor(_ level: StockLevel) -> Color {
+        switch level {
+        case .good:              return .green
+        case .warning:           return .orange
+        case .critical, .empty:  return .red
+        }
     }
 }
