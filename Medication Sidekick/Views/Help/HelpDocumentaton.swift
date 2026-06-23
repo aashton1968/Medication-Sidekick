@@ -1,0 +1,89 @@
+//
+//  HelpDocumentaton.swift
+//  Medication Sidekick
+//
+//  Created by Alan Ashton on 2026-01-03.
+//
+
+
+import SwiftUI
+
+struct HelpDocumentation {
+    struct HelpPage: Identifiable, Equatable {
+        let id = UUID()
+        let title: String
+        let markdownURL: URL
+    }
+    
+    static func localDoc(_ name: String) -> URL {
+        if let url = Bundle.main.url(forResource: name, withExtension: "md") {
+            return url
+        }
+        
+        if let url = Bundle.main.url(forResource: name, withExtension: "md", subdirectory: "_HelpDocs") {
+            return url
+        }
+
+        // 🚨 LOG MISSING FILE
+        print("❌ Missing help markdown file in bundle:", name)
+
+        // Fallback to an empty placeholder so SwiftUI doesn't crash
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("missing_help.md")
+
+        if !FileManager.default.fileExists(atPath: temp.path) {
+            try? "Help file '\(name)' is missing from the app bundle."
+                .write(to: temp, atomically: true, encoding: .utf8)
+        }
+
+        return temp
+    }
+
+    static var defaultPage: HelpPage {
+        if let first = helpPages.first {
+            return first
+        }
+        return HelpPage(title: "Home", markdownURL: localDoc("Home"))
+    }
+
+    static func page(named title: String) -> HelpPage? {
+        helpPages.first { $0.title == title }
+    }
+
+    static let helpPages: [HelpPage] = [
+        
+        HelpPage(title: "Home", markdownURL: localDoc("Home")),
+        HelpPage(title: "Getting Started", markdownURL: localDoc("Getting-Started")),
+        HelpPage(title: "Today", markdownURL: localDoc("Today")),
+        HelpPage(title: "Medications", markdownURL: localDoc("Medications")),
+        HelpPage(title: "Meal Times", markdownURL: localDoc("Meal-Times")),
+        HelpPage(title: "Settings", markdownURL: localDoc("Settings")),
+        HelpPage(title: "FAQ", markdownURL: localDoc("FAQ")),
+        HelpPage(title: "Troubleshooting", markdownURL: localDoc("Troubleshooting")),
+        HelpPage(title: "Support", markdownURL: localDoc("Support")),
+        HelpPage(title: "Legal: Privacy Policy", markdownURL: localDoc("Legal-Privacy-Policy")),
+        HelpPage(title: "Legal: Terms of Use (Eula)", markdownURL: localDoc("Legal-Terms-of-Use-Eula")),
+        HelpPage(title: "Legal: Medical Disclaimer", markdownURL: localDoc("Legal-Medical-Disclaimer")),
+    ]
+}
+
+
+/*
+ 
+ - [Getting Started](Home)
+ - [Logbook Entries](Logbook-Entries)
+ - [Charts & Insights](Charts-and-Insights)
+ - [Meals](Meals)
+ - [Ratios & Targets](Ratios-and-Targets)
+ - [Dexcom Integration](Dexcom-Integration)
+ - [Privacy & Security](Privacy-and-Security)
+
+ ---
+
+ ## Legal
+
+ - [Privacy Policy](Legal-Privacy-Policy)
+ - [Terms of Use](Legal-Terms-of-Use)
+ - [Medical Disclaimer](Legal-Medical-Disclaimer)
+ 
+ */

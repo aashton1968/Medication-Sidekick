@@ -1,0 +1,31 @@
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+DerivedData/
+*.hmap
+*.ipa
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Build
+build/
+*.o
+*.d
+*.dSYM/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods
+Pods/
+
+# Secrets — never commit; copy Config/Secrets.xcconfig.template → Config/Secrets.xcconfig
+Config/Secrets.xcconfig
