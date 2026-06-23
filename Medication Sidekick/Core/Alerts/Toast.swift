@@ -106,7 +106,12 @@ struct ToastModifier: ViewModifier {
 
             VStack {
                 if manager.isShowingToast, let toast = manager.currentToast {
-                    SwiftUIToastView(config: toast)
+                    Button {
+                            ToastManager.shared.dismiss()
+                        } label: {
+                            SwiftUIToastView(config: toast)
+                        }
+                        .buttonStyle(.plain)
                         .transition(
                             .asymmetric(
                                 insertion: .move(edge: .top).combined(with: .opacity),
@@ -114,48 +119,11 @@ struct ToastModifier: ViewModifier {
                             )
                         )
                         .zIndex(999)
-                        .onTapGesture {
-                            ToastManager.shared.dismiss()
-                        }
                 }
                 Spacer()
             }
             .animation(.spring(response: 0.5, dampingFraction: 0.7), value: manager.isShowingToast)
         }
     }
-}
-
-// MARK: - SwiftUI Toast View
-
-struct Oct30View: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Button("Show Error Toast") {
-                ToastManager.shared.showError("Something went wrong!")
-            }
-
-            Button("Show Success Toast") {
-                ToastManager.shared.showSuccess("Operation completed!")
-            }
-
-            Button("Show General Toast") {
-                ToastManager.shared.showGeneral("This is a notification")
-            }
-
-            Button("Custom Toast") {
-                ToastManager.shared.show(
-                    message: "Custom message here",
-                    type: .success,
-                    duration: 5.0,
-                    showIcon: false
-                )
-            }
-        }
-        //.toast() // Add this modifier to enable toast
-    }
-}
-
-#Preview("SwiftUI Toast") {
-    Oct30View()
 }
 

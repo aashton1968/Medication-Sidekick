@@ -48,13 +48,15 @@ struct SlidingSidebar<Content: View, Sidebar: View>: View {
 
                 // Tap-to-close overlay (only active when sidebar is open)
                 if isOpen {
-                    Color.black.opacity(0.001)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(animationCurve) {
-                                isOpen = false
-                            }
+                    Button {
+                        withAnimation(animationCurve) {
+                            isOpen = false
                         }
+                    } label: {
+                        Color.black.opacity(0.001)
+                            .ignoresSafeArea()
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 // Sidebar panel with Liquid Glass on iOS 26+
@@ -129,31 +131,29 @@ struct SidebarMenuItemView: View {
     }
     
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(.blue)
-                .frame(width: 24, height: 24)
-            
-            Text(target.title)
-                .font(.body)
-                .fontWeight(.medium)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .contentShape(Rectangle())
-        .background(
-            currentTarget == target ? Color.blue.opacity(0.1) : Color.clear
-        )
-        .onTapGesture {
-            // Handle menu item tap
-            print("Tapped \(target.title)")
+        Button {
             navigationRouter.navigate(target.route)
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.blue)
+                    .frame(width: 24, height: 24)
+
+                Text(target.title)
+                    .font(.body)
+                    .fontWeight(.medium)
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .contentShape(Rectangle())
+            .background(
+                currentTarget == target ? Color.blue.opacity(0.1) : Color.clear
+            )
         }
-        
-        
+        .buttonStyle(.plain)
     }
 }
 

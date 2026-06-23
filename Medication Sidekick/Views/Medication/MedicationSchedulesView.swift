@@ -56,7 +56,7 @@ struct MedicationSchedulesView: View {
         
         /*
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                 } label: {
                     Image(systemName: "ellipsis.circle")

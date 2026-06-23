@@ -59,7 +59,7 @@ enum MealTime: String, Codable, CaseIterable {
         case .lunch:        return "Lunch"
         case .dinner:       return "Dinner"
         case .supper:       return "Supper"
-        case .bedTime:      return "BedTime"
+        case .bedTime:      return "Bed Time"
         }
     }
 

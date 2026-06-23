@@ -283,7 +283,7 @@ struct TodaySnapshotSection: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 
             }
@@ -568,33 +568,14 @@ struct TodayView: View {
            await refreshDoses()
        }
        
-       //.navigationTitle("Today")
        .navigationBarTitleDisplayMode(.inline)
-       
-       // Header section
        .toolbar {
            ToolbarItem(placement: .principal) {
-               HStack {
-                   Text("Today")
-                       .font(.headline).bold()
-                       .foregroundColor(themeManager.selectedTheme.textPrimary)
-               }
+               Text("Today")
+                   .font(.headline).bold()
+                   .foregroundStyle(themeManager.selectedTheme.textPrimary)
            }
        }
-       
-       /*
-       .toolbar {
-           ToolbarItem(placement: .navigationBarTrailing) {
-               Menu {
-               } label: {
-                   Image(systemName: "ellipsis.circle")
-                       .font(.system(size: 20, weight: .bold))
-                       .accessibilityLabel("More")
-               }
-               
-           }
-       }
-    */
    }
 
     @MainActor
@@ -696,6 +677,7 @@ struct DoseRow: View {
     }
     
     var body: some View {
+        Button(action: toggle) {
         HStack(spacing: 12) {
 
             Image(systemName: iconName)
@@ -722,12 +704,11 @@ struct DoseRow: View {
                 .font(.subheadline)
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            toggle()
-        }
         .allowsHitTesting(!isToggling)
         .opacity(dose.status == .taken ? 0.5 : 1.0)
         .animation(.easeInOut, value: dose.status)
+        }
+        .buttonStyle(.plain)
     }
 
     private func toggle() {

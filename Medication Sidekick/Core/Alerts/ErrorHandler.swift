@@ -1,22 +1,2 @@
-//
-//  ErrorHandler.swift
-//  Diabetic Sidekick
-//
-//  Created by Alan Ashton on 2024-08-12.
-//
-
-import SwiftUI
-import Combine
-
-@MainActor
-class ErrorManager: ObservableObject {
-    @Published var errorMessage: String?
-    @Published var showError: Bool = false
-
-    func handleError(_ error: Error) {
-        // Customize your error handling
-        errorMessage = error.localizedDescription
-        showError = true
-    }
-}
-
+// ErrorHandler.swift — DELETED (dead code from Diabetic Sidekick, §9.6)
+// Remove this file from Xcode: select in navigator → Delete → Move to Trash.

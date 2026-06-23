@@ -54,7 +54,7 @@ struct AboutView: View {
                     
                     Text("© 2024 Ashton IT Consulting")
                         .font(.footnote)
-                        .foregroundColor(themeManager.selectedTheme.textSecondary)
+                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                     
                     
@@ -65,7 +65,7 @@ struct AboutView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button("Done") {
                             dismiss()
                         }
@@ -81,7 +81,7 @@ struct AboutView: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "circle.fill")
                 .font(.system(size: 8))
-                .foregroundColor(.red)
+                .foregroundStyle(.red)
                 .padding(.top, 6)
 
                 Text("**\(text)**")

@@ -203,7 +203,7 @@ struct MedicationDetailView: View {
         // MARK: - Toolbar
         .toolbar {
             
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
 
                     Button {

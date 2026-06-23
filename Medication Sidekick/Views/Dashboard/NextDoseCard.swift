@@ -133,6 +133,7 @@ private struct SlotDoseRow: View {
     }
 
     var body: some View {
+        Button(action: toggle) {
         HStack(spacing: 12) {
             Image(systemName: iconName)
                 .font(.system(size: 20, weight: .semibold))
@@ -146,7 +147,7 @@ private struct SlotDoseRow: View {
                     .font(.caption)
                     .foregroundStyle(themeManager.selectedTheme.textSecondary)
             }
-            .foregroundColor(themeManager.selectedTheme.textPrimary)
+            .foregroundStyle(themeManager.selectedTheme.textPrimary)
             
             
             Spacer()
@@ -163,10 +164,11 @@ private struct SlotDoseRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .contentShape(Rectangle())
-        .onTapGesture { toggle() }
         .allowsHitTesting(!isToggling)
         .opacity(dose.status == .taken || dose.status == .skipped ? 0.5 : 1.0)
         .animation(.easeInOut, value: dose.status)
+        }
+        .buttonStyle(.plain)
     }
 
     private func toggle() {

@@ -18,6 +18,7 @@ struct MedicationDoseGenerator {
     /// Does NOT save — the caller is responsible for saving.
     static func refreshDoses(
         for medication: Medication,
+        cachedDoses: [MedicationDose]? = nil,
         modelContext: ModelContext
     ) throws {
 
@@ -25,7 +26,7 @@ struct MedicationDoseGenerator {
         let startOfToday = calendar.startOfDay(for: Date())
         let currentMealKeys = Set(medication.mealsRaw)
 
-        let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
+        let allDoses = try cachedDoses ?? modelContext.fetch(FetchDescriptor<MedicationDose>())
 
         let dosesFromToday = allDoses.filter { dose in
             dose.medication == medication &&
@@ -58,8 +59,9 @@ struct MedicationDoseGenerator {
     /// Refreshes doses for all medications, saving only if changes were made.
     static func refreshAllDoses(modelContext: ModelContext) throws {
         let medications = try modelContext.fetch(FetchDescriptor<Medication>())
+        let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
         for medication in medications {
-            try refreshDoses(for: medication, modelContext: modelContext)
+            try refreshDoses(for: medication, cachedDoses: allDoses, modelContext: modelContext)
         }
         if modelContext.hasChanges {
             try modelContext.save()

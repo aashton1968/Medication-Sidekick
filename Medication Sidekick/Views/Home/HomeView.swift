@@ -98,7 +98,7 @@ struct HomeView: View {
                 }
                 // Context menu
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             Section("Actions") {
                                 Button {

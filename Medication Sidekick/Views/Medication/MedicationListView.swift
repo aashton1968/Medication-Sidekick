@@ -55,12 +55,14 @@ struct MedicationListView: View {
             }
 
             ForEach(sortedMedications) { medication in
-                MedicationRow(medication: medication)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        navigationRouter.navigate(.medication(id: medication.id))
-                    }
-                    .contextMenu {
+                Button {
+                    navigationRouter.navigate(.medication(id: medication.id))
+                } label: {
+                    MedicationRow(medication: medication)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
                         Button {
                             navigationRouter.navigate(.medication(id: medication.id))
                         } label: {
@@ -82,7 +84,7 @@ struct MedicationListView: View {
         .navigationBarTitleDisplayMode(.inline)
         
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
                     if !sortedMedications.isEmpty {
                         Button {

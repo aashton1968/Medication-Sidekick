@@ -23,16 +23,16 @@ struct HelpListView: View {
                 HStack(spacing: 14) {
                     Image(systemName: "book.fill")
                         .font(.title3)
-                        .foregroundColor(themeManager.selectedTheme.textPrimary)
+                        .foregroundStyle(themeManager.selectedTheme.textPrimary)
 
                     Text(page.title)
                         .font(.headline)
-                        .foregroundColor(themeManager.selectedTheme.textPrimary)
+                        .foregroundStyle(themeManager.selectedTheme.textPrimary)
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .foregroundColor(themeManager.selectedTheme.textSecondary)
+                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
                 }
                 .padding(.vertical, 8)
             }

@@ -26,7 +26,7 @@ struct NavigationRowModifier: ViewModifier {
             .buttonStyle(.plain)
             .overlay(alignment: .trailing) {
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .padding(.trailing, 6)
             }
     }

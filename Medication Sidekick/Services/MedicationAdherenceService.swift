@@ -140,21 +140,25 @@ struct MedicationAdherenceService {
         now: Date = Date(),
         modelContext: ModelContext
     ) throws -> Int {
-        let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
         let cutoff = now.addingTimeInterval(-configuration.missedGracePeriod)
+        let scheduledRaw = "scheduled"
+        let descriptor = FetchDescriptor<MedicationDose>(
+            predicate: #Predicate { dose in
+                dose.statusRaw == scheduledRaw && dose.scheduledDate <= cutoff
+            }
+        )
+        let staleDoses = try modelContext.fetch(descriptor)
 
-        var updated = 0
-        for dose in allDoses where dose.status == .scheduled && dose.scheduledDate <= cutoff {
+        for dose in staleDoses {
             dose.status = .missed
             dose.updatedAt = now
-            updated += 1
         }
 
-        if updated > 0 {
+        if !staleDoses.isEmpty {
             try modelContext.save()
         }
 
-        return updated
+        return staleDoses.count
     }
 
     func summarize(
@@ -189,8 +193,14 @@ struct MedicationAdherenceService {
     }
 
     private func doses(in range: DateInterval, modelContext: ModelContext) throws -> [MedicationDose] {
-        let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
-        return allDoses.filter { range.contains($0.scheduledDate) }
+        let start = range.start
+        let end = range.end
+        let descriptor = FetchDescriptor<MedicationDose>(
+            predicate: #Predicate { dose in
+                dose.scheduledDate >= start && dose.scheduledDate < end
+            }
+        )
+        return try modelContext.fetch(descriptor)
     }
 
     private func effectiveStatus(for dose: MedicationDose, now: Date) -> DoseStatus {

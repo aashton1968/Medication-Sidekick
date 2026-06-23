@@ -31,11 +31,13 @@ struct MealTimeListView: View {
             }
 
             ForEach(mealTimes) { mealTime in
-                MealTimeRow(mealTime: mealTime)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedMealTime = mealTime
-                    }
+                Button {
+                    selectedMealTime = mealTime
+                } label: {
+                    MealTimeRow(mealTime: mealTime)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .onDelete(perform: delete)
         }
@@ -43,7 +45,7 @@ struct MealTimeListView: View {
         .navigationBarTitleDisplayMode(.inline)
 
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingAdd = true
                 } label: {

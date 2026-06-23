@@ -35,7 +35,7 @@ struct SwiftUIToastView: View {
 
             Text(config.message)
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(themeManager.selectedTheme.textOnAccent)
+                .foregroundStyle(themeManager.selectedTheme.textOnAccent)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -45,7 +45,7 @@ struct SwiftUIToastView: View {
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
         .background(toastBackgroundColor)
-        .cornerRadius(12)
+        .clipShape(.rect(cornerRadius: 12))
         .premiumFloatingShadow(theme: themeManager.selectedTheme, cornerRadius: 12)
         .padding(.horizontal, 16)
         .offset(y: offset)
