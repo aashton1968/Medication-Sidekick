@@ -20,6 +20,9 @@ final class MedicationDose {
     // MARK: - Outcome
     var statusRaw: String = DoseStatus.scheduled.rawValue
     var takenTime: Date? = nil
+    /// Quantity deducted from stock when this dose was marked taken.
+    /// Used by undoTaken() so restoring uses the original deduction, not the current doseQuantity.
+    var deductedQuantity: Int = 0
 
     // MARK: - Metadata
     var createdAt: Date = Date()
@@ -77,11 +80,13 @@ final class MedicationDose {
     /// Marks the dose as taken and decrements the parent medication's stock.
     func markAsTaken(at time: Date = Date()) {
         guard status != .taken else { return }
+        let qty = medication?.doseQuantity ?? 0
         status = .taken
         takenTime = time
+        deductedQuantity = qty
         updatedAt = Date()
-        if let medication {
-            medication.currentStock = max(0, medication.currentStock - medication.doseQuantity)
+        if let medication, qty > 0 {
+            medication.currentStock = max(0, medication.currentStock - qty)
             medication.updatedAt = Date()
         }
     }
@@ -89,13 +94,26 @@ final class MedicationDose {
     /// Reverts a taken dose back to scheduled and restores the parent medication's stock.
     func undoTaken() {
         guard status == .taken else { return }
-        let restoreQty = medication?.doseQuantity ?? 1
+        let restoreQty = deductedQuantity > 0 ? deductedQuantity : (medication?.doseQuantity ?? 1)
         status = .scheduled
         takenTime = nil
+        deductedQuantity = 0
         updatedAt = Date()
         if let medication {
             medication.currentStock += restoreQty
             medication.updatedAt = Date()
         }
+    }
+
+    func markAsSkipped() {
+        guard status == .scheduled else { return }
+        status = .skipped
+        updatedAt = Date()
+    }
+
+    func undoSkipped() {
+        guard status == .skipped else { return }
+        status = .scheduled
+        updatedAt = Date()
     }
 }

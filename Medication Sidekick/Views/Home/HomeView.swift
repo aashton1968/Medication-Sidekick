@@ -22,6 +22,7 @@ struct HomeView: View {
     @AppStorage(AppStorageKeys.hasShownInitialSubscriptionPrompt.rawValue)
     private var hasShownInitialSubscriptionPrompt: Bool = false
     private let notificationService = MedicationNotificationService()
+    @State private var notificationSyncTask: Task<Void, Never>?
     
     let customConfig = SidebarConfiguration(
         width:  270,
@@ -146,7 +147,8 @@ struct HomeView: View {
              */
         }
         .onReceive(NotificationCenter.default.publisher(for: .medicationDidChange)) { _ in
-            Task {
+            notificationSyncTask?.cancel()
+            notificationSyncTask = Task {
                 await syncMedicationNotifications()
             }
         }

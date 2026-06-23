@@ -38,5 +38,37 @@ extension View {
     }
 }
 
+// MARK: - Dose Ranking Policy
+
+/// Single source of truth for which MedicationDose "wins" when two records
+/// represent the same logical dose. Used by UI deduplication (TodayView) and
+/// CloudKit reconciliation (MedicationSeedService) so they always pick the same keeper.
+enum DoseRankingPolicy {
+
+    nonisolated static func preferred(_ lhs: MedicationDose, _ rhs: MedicationDose) -> MedicationDose {
+        if lhs.status.sortPriority != rhs.status.sortPriority {
+            return lhs.status.sortPriority > rhs.status.sortPriority ? lhs : rhs
+        }
+        if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt ? lhs : rhs }
+        if lhs.createdAt != rhs.createdAt { return lhs.createdAt <= rhs.createdAt ? lhs : rhs }
+        let lhsID = lhs.medication?.id.uuidString ?? ""
+        let rhsID = rhs.medication?.id.uuidString ?? ""
+        if lhsID != rhsID { return lhsID < rhsID ? lhs : rhs }
+        if lhs.mealTimeRaw != rhs.mealTimeRaw { return lhs.mealTimeRaw < rhs.mealTimeRaw ? lhs : rhs }
+        return lhs
+    }
+
+    nonisolated static func sortsBefore(_ lhs: MedicationDose, _ rhs: MedicationDose) -> Bool {
+        if lhs.status.sortPriority != rhs.status.sortPriority { return lhs.status.sortPriority > rhs.status.sortPriority }
+        if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
+        if lhs.createdAt != rhs.createdAt { return lhs.createdAt < rhs.createdAt }
+        let lhsID = lhs.medication?.id.uuidString ?? ""
+        let rhsID = rhs.medication?.id.uuidString ?? ""
+        if lhsID != rhsID { return lhsID < rhsID }
+        if lhs.mealTimeRaw != rhs.mealTimeRaw { return lhs.mealTimeRaw < rhs.mealTimeRaw }
+        return false
+    }
+}
+
 
 

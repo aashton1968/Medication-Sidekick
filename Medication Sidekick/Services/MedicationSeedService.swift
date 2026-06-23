@@ -307,26 +307,7 @@ private extension MedicationSeedService {
     }
 
     nonisolated func doseShouldSortBefore(_ lhs: MedicationDose, _ rhs: MedicationDose) -> Bool {
-        let lhsPriority = lhs.status.sortPriority
-        let rhsPriority = rhs.status.sortPriority
-        if lhsPriority != rhsPriority {
-            return lhsPriority > rhsPriority
-        }
-        if lhs.updatedAt != rhs.updatedAt {
-            return lhs.updatedAt > rhs.updatedAt
-        }
-        if lhs.createdAt != rhs.createdAt {
-            return lhs.createdAt < rhs.createdAt
-        }
-        let lhsMedicationID = lhs.medication?.id.uuidString ?? ""
-        let rhsMedicationID = rhs.medication?.id.uuidString ?? ""
-        if lhsMedicationID != rhsMedicationID {
-            return lhsMedicationID < rhsMedicationID
-        }
-        if lhs.mealTimeRaw != rhs.mealTimeRaw {
-            return lhs.mealTimeRaw < rhs.mealTimeRaw
-        }
-        return false
+        DoseRankingPolicy.sortsBefore(lhs, rhs)
     }
 
     nonisolated func doseKey(for dose: MedicationDose) -> String {

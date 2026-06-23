@@ -42,7 +42,6 @@ struct HelpListView: View {
         
         .task {
             if let first = HelpDocumentation.helpPages.first {
-                print("HelpListView appeared: Loaded \(first.markdownURL) help pages.")
             }
         }
         

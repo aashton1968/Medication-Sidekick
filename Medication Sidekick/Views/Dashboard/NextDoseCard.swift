@@ -169,6 +169,31 @@ private struct SlotDoseRow: View {
         .animation(.easeInOut, value: dose.status)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if dose.status == .scheduled || dose.status == .skipped {
+                Button {
+                    skip()
+                } label: {
+                    Label(dose.status == .skipped ? "Undo Skip" : "Skip Dose",
+                          systemImage: dose.status == .skipped ? "arrow.uturn.backward" : "minus.circle")
+                }
+            }
+        }
+    }
+
+    private func skip() {
+        InteractionGuard.markDoseInteraction()
+        if dose.status == .skipped {
+            dose.undoSkipped()
+        } else {
+            dose.markAsSkipped()
+        }
+        do {
+            try modelContext.save()
+            NotificationCenter.default.post(name: .medicationDidChange, object: nil)
+        } catch {
+            Self.logger.error("Failed toggling skip: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func toggle() {

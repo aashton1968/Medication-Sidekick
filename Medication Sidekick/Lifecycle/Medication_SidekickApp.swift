@@ -14,7 +14,9 @@ import UserNotifications
 final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = AppNotificationDelegate()
     private static let medicationRequestPrefix = "meddose."
-    @MainActor private(set) static var hasPendingMedicationReminderOpen = false
+    // nonisolated(unsafe) so the delegate callback can write it synchronously
+    // before completionHandler() fires, without a Task hop.
+    nonisolated(unsafe) private(set) static var hasPendingMedicationReminderOpen = false
 
     private override init() {}
     
@@ -38,16 +40,15 @@ final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        defer { completionHandler() }
-        
         guard response.notification.request.identifier.hasPrefix(Self.medicationRequestPrefix) else {
+            completionHandler()
             return
         }
-        
-        Task { @MainActor in
-            Self.hasPendingMedicationReminderOpen = true
-            NotificationCenter.default.post(name: .medicationReminderOpened, object: nil)
-        }
+        // Set flag synchronously before completionHandler() so the navigation
+        // intent is committed even if the app is backgrounded immediately after.
+        Self.hasPendingMedicationReminderOpen = true
+        NotificationCenter.default.post(name: .medicationReminderOpened, object: nil)
+        completionHandler()
     }
 }
 

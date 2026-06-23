@@ -1,3 +1,4 @@
+import os.log
 //
 //  HelpDocumentaton.swift
 //  Medication Sidekick
@@ -7,6 +8,8 @@
 
 
 import SwiftUI
+
+private let helpLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "HelpDocs")
 
 struct HelpDocumentation {
     struct HelpPage: Identifiable, Equatable {
@@ -25,7 +28,7 @@ struct HelpDocumentation {
         }
 
         // 🚨 LOG MISSING FILE
-        print("❌ Missing help markdown file in bundle:", name)
+        helpLogger.warning("Missing help markdown file in bundle: \(name, privacy: .public)")
 
         // Fallback to an empty placeholder so SwiftUI doesn't crash
         let temp = FileManager.default.temporaryDirectory

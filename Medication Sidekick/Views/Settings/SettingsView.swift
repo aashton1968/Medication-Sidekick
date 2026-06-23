@@ -15,6 +15,7 @@ struct SettingsView: View {
     @EnvironmentObject private var subscriptionService: SubscriptionService
     @AppStorage(AppStorageKeys.medicationNotificationsEnabled.rawValue) private var notificationsEnabled: Bool = true
     @AppStorage(AppStorageKeys.medicationReminderLeadTimeMinutes.rawValue) private var reminderLeadTimeMinutes: Int = 0
+    @AppStorage(AppStorageKeys.notificationPrivacyEnabled.rawValue) private var notificationPrivacyEnabled: Bool = false
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
     @State private var testNotificationMessage: String?
     @State private var testNotificationIsError = false
@@ -32,6 +33,12 @@ struct SettingsView: View {
         Form {
             Section("Notifications") {
                 Toggle("Medication reminders", isOn: $notificationsEnabled)
+
+                Toggle("Hide medication names in notifications", isOn: $notificationPrivacyEnabled)
+                    .disabled(!notificationsEnabled)
+                    .onChange(of: notificationPrivacyEnabled) { _, _ in
+                        NotificationCenter.default.post(name: .medicationDidChange, object: nil)
+                    }
 
                 Picker("Reminder lead time", selection: $reminderLeadTimeMinutes) {
                     ForEach(leadTimeOptions, id: \.self) { minutes in

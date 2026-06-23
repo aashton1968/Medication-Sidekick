@@ -58,7 +58,7 @@ struct HelpView: View {
         }
         .task {
             let url = currentPage.markdownURL
-            print("📄 Help markdown exists:", FileManager.default.fileExists(atPath: url.path))
+            
         }
         
         .navigationBarTitleDisplayMode(.inline)
@@ -99,25 +99,22 @@ struct HelpView: View {
     @MainActor
     private func loadMarkdownForCurrentPage() async {
         loadError = nil
-
         let url = currentPage.markdownURL
-
         do {
-            let raw: String = try await Task.detached(priority: .userInitiated) {
-                let data = try Data(contentsOf: url)
-                guard let string = String(data: data, encoding: .utf8) else {
-                    throw HelpLoadError.invalidEncoding
-                }
-                return string
-            }.value
-
-            let safe = sanitizeMissingAssetImages(in: raw)
-
-            markdown = safe
+            let raw = try await readBundleFile(at: url)
+            markdown = sanitizeMissingAssetImages(in: raw)
         } catch {
             markdown = "❌ Failed to load help content."
             loadError = presentableError(error, url: url)
         }
+    }
+
+    nonisolated private func readBundleFile(at url: URL) async throws -> String {
+        let data = try Data(contentsOf: url)
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw HelpLoadError.invalidEncoding
+        }
+        return string
     }
 
     private func presentableError(_ error: Error, url: URL) -> String {

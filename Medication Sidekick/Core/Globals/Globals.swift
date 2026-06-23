@@ -65,6 +65,7 @@ extension Notification.Name {
 enum AppStorageKeys: String {
     case medicationNotificationsEnabled = "medicationNotificationsEnabled"
     case medicationReminderLeadTimeMinutes = "medicationReminderLeadTimeMinutes"
+    case notificationPrivacyEnabled = "notificationPrivacyEnabled"
     case revenueCatAppUserID = "revenueCatAppUserID"
     case hasShownInitialSubscriptionPrompt = "hasShownInitialSubscriptionPrompt"
 }

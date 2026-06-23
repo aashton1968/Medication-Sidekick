@@ -15,7 +15,7 @@
 
 /* Begin PBXFileReference section */
 		35AD42DC2F271E0700AA5470 /* Medication Sidekick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Medication Sidekick.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		35CF00012F290000000CAFE1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		35CF00012F290000000CAFE1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -69,21 +69,20 @@
 			);
 			sourceTree = "<group>";
 		};
-		35CF00022F290000000CAFE2 /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				35CF00012F290000000CAFE1 /* Secrets.xcconfig */,
-			);
-			name = Config;
-			path = Config;
-			sourceTree = "<group>";
-		};
 		35AD42DD2F271E0700AA5470 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				35AD42DC2F271E0700AA5470 /* Medication Sidekick.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		35CF00022F290000000CAFE2 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				35CF00012F290000000CAFE1 /* Secrets.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

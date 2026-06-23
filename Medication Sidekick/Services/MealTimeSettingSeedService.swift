@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import os.log
 import SwiftData
 
 final class MealTimeSettingSeedService {
     static let shared = MealTimeSettingSeedService()
+    nonisolated(unsafe) private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "MealTimeSeed")
     private init() {}
 
     nonisolated func seedIfNeeded(container: ModelContainer) async {
@@ -58,7 +60,7 @@ final class MealTimeSettingSeedService {
             }
 
         } catch {
-            print("Failed to seed meal time settings: \(error)")
+            Self.logger.error("Failed to seed meal time settings: \(error.localizedDescription, privacy: .public)")
         }
     }
 

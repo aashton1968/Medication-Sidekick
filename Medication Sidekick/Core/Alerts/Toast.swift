@@ -97,8 +97,9 @@ extension ToastManager {
 }
 
 
+@MainActor
 struct ToastModifier: ViewModifier {
-    var manager = ToastManager.shared
+    let manager = ToastManager.shared
 
     func body(content: Content) -> some View {
         ZStack {

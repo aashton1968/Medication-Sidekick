@@ -10,28 +10,7 @@ import SwiftData
 import os.log
 
 private func preferredDose(_ lhs: MedicationDose, _ rhs: MedicationDose) -> MedicationDose {
-    let lhsPriority = lhs.status.sortPriority
-    let rhsPriority = rhs.status.sortPriority
-    if lhsPriority != rhsPriority {
-        return lhsPriority > rhsPriority ? lhs : rhs
-    }
-    if lhs.updatedAt != rhs.updatedAt {
-        return lhs.updatedAt > rhs.updatedAt ? lhs : rhs
-    }
-    if lhs.createdAt != rhs.createdAt {
-        return lhs.createdAt <= rhs.createdAt ? lhs : rhs
-    }
-    // Avoid touching SwiftData internal IDs here; stale futures from sync can crash
-    // when resolved. Keep deterministic ordering using stable domain fields instead.
-    let lhsMedicationID = lhs.medication?.id.uuidString ?? ""
-    let rhsMedicationID = rhs.medication?.id.uuidString ?? ""
-    if lhsMedicationID != rhsMedicationID {
-        return lhsMedicationID < rhsMedicationID ? lhs : rhs
-    }
-    if lhs.mealTimeRaw != rhs.mealTimeRaw {
-        return lhs.mealTimeRaw < rhs.mealTimeRaw ? lhs : rhs
-    }
-    return lhs
+    DoseRankingPolicy.preferred(lhs, rhs)
 }
 
 private func normalizedMedicationToken(_ value: String?) -> String {
@@ -90,6 +69,21 @@ private func medicationDoseSortsBefore(_ lhs: MedicationDose, _ rhs: MedicationD
 }
 
 // MARK: - Slot Grouping
+
+/// Fetches, deduplicates, and filters active-medication doses for a single calendar day.
+private func fetchDayDoses(for date: Date, calendar: Calendar, context: ModelContext) -> [MedicationDose] {
+    let start = calendar.startOfDay(for: date)
+    let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86400)
+    do {
+        let descriptor = FetchDescriptor<MedicationDose>(
+            predicate: #Predicate { $0.scheduledDate >= start && $0.scheduledDate < end }
+        )
+        let fetched = try context.fetch(descriptor)
+        return deduplicatedDoses(fetched.filter { $0.medication?.isActive == true })
+    } catch {
+        return []
+    }
+}
 
 private func makeSlotGroups(from doses: [MedicationDose], settings: [MealTimeSetting]) -> [TimeSlotGroup] {
     let grouped = Dictionary(grouping: doses) { $0.mealTimeRaw }
@@ -311,19 +305,7 @@ struct TodaySnapshotSection: View {
     }
 
     private func fetchTodayDoses() {
-        let cal = Calendar.current
-        let start = cal.startOfDay(for: Date())
-        let end = cal.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86400)
-
-        do {
-            let descriptor = FetchDescriptor<MedicationDose>(
-                predicate: #Predicate { $0.scheduledDate >= start && $0.scheduledDate < end }
-            )
-            let fetched = try modelContext.fetch(descriptor)
-            todayDoses = deduplicatedDoses(fetched.filter { $0.medication?.isActive == true })
-        } catch {
-            todayDoses = []
-        }
+        todayDoses = fetchDayDoses(for: Date(), calendar: Calendar.current, context: modelContext)
     }
 
     private func refreshDailyStatusSnapshot(now: Date = Date()) {
@@ -589,18 +571,7 @@ struct TodayView: View {
     }
 
     private func fetchDoses(for date: Date) {
-        let start = calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86400)
-
-        do {
-            let descriptor = FetchDescriptor<MedicationDose>(
-                predicate: #Predicate { $0.scheduledDate >= start && $0.scheduledDate < end }
-            )
-            let fetched = try modelContext.fetch(descriptor)
-            todayDoses = deduplicatedDoses(fetched.filter { $0.medication?.isActive == true })
-        } catch {
-            todayDoses = []
-        }
+        todayDoses = fetchDayDoses(for: date, calendar: calendar, context: modelContext)
     }
 
     private func moveDay(by days: Int) {
@@ -705,10 +676,19 @@ struct DoseRow: View {
         }
         .contentShape(Rectangle())
         .allowsHitTesting(!isToggling)
-        .opacity(dose.status == .taken ? 0.5 : 1.0)
+        .opacity(dose.status == .taken || dose.status == .skipped ? 0.5 : 1.0)
         .animation(.easeInOut, value: dose.status)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if dose.status == .scheduled || dose.status == .skipped {
+                Button {
+                    skip()
+                } label: {
+                    Label(dose.status == .skipped ? "Undo Skip" : "Skip Dose", systemImage: dose.status == .skipped ? "arrow.uturn.backward" : "minus.circle")
+                }
+            }
+        }
     }
 
     private func toggle() {
@@ -736,6 +716,21 @@ struct DoseRow: View {
             } catch {
                 Self.logger.error("Failed toggling dose to taken: \(error.localizedDescription, privacy: .public)")
             }
+        }
+    }
+
+    private func skip() {
+        InteractionGuard.markDoseInteraction()
+        if dose.status == .skipped {
+            dose.undoSkipped()
+        } else {
+            dose.markAsSkipped()
+        }
+        do {
+            try context.save()
+            NotificationCenter.default.post(name: .medicationDidChange, object: nil)
+        } catch {
+            Self.logger.error("Failed toggling skip: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

@@ -7,12 +7,14 @@
 
 
 import Foundation
+import os.log
 import RevenueCat
 import Combine
 
 @MainActor
 final class SubscriptionService: NSObject, ObservableObject, PurchasesDelegate {
     static let freeMedicationLimit = 5
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "SubscriptionService")
     private static let automaticRestoreRetryInterval: TimeInterval = 12 * 60 * 60
 
     @Published private(set) var customerInfo: CustomerInfo?
@@ -41,7 +43,7 @@ final class SubscriptionService: NSObject, ObservableObject, PurchasesDelegate {
             let info = try await Purchases.shared.customerInfo()
             updateState(with: info)
         } catch {
-            print("❌ Error fetching customer info: \(error)")
+            Self.logger.error("Error fetching customer info: \(error.localizedDescription, privacy: .public)")
             hasLoadedCustomerInfo = true
         }
     }
@@ -56,7 +58,7 @@ final class SubscriptionService: NSObject, ObservableObject, PurchasesDelegate {
             let info = try await Purchases.shared.syncPurchases()
             updateState(with: info)
         } catch {
-            print("❌ Error syncing purchases: \(error)")
+            Self.logger.error("Error syncing purchases: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -112,7 +114,7 @@ final class SubscriptionService: NSObject, ObservableObject, PurchasesDelegate {
             let info = try await Purchases.shared.restorePurchases()
             updateState(with: info)
         } catch {
-            print("❌ Automatic restore attempt failed: \(error)")
+            Self.logger.error("Automatic restore attempt failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
