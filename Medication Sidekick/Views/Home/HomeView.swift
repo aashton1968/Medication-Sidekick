@@ -11,7 +11,7 @@ import os.log
 
 struct HomeView: View {
     
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     @EnvironmentObject var subscriptionService: SubscriptionService
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) var themeManager
@@ -33,9 +33,9 @@ struct HomeView: View {
     
     
     var body: some View {
-        
+        @Bindable var router = navigationRouter
         ZStack {
-            NavigationStack(path: $navigationRouter.path) {
+            NavigationStack(path: $router.path) {
                 SlidingSidebar(isOpen: $sidebarOpen, configuration: customConfig) {
                     ScrollView {
                         VStack(spacing: 20) {
@@ -70,7 +70,7 @@ struct HomeView: View {
                     }
                 } sidebar: {
                     SidebarContentView()
-                        .environmentObject(navigationRouter)
+                        .environment(navigationRouter)
                 }
                 .navigationDestination(for: Route.self) { route in
                     destinationView(for: route)
@@ -140,11 +140,6 @@ struct HomeView: View {
                 sidebarOpen = false
                 navigationRouter.navigate(.todayView)
             }
-            /*
-            if navigationRouter.path.isEmpty {
-                navigationRouter.navigate(.todayView)
-            }
-             */
         }
         .onReceive(NotificationCenter.default.publisher(for: .medicationDidChange)) { _ in
             notificationSyncTask?.cancel()
@@ -179,37 +174,37 @@ struct HomeView: View {
         case .todayView:
             TodayView()
                 .environment(themeManager)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
 
         case .medications:
             MedicationListView()
                 .environment(themeManager)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
 
         case .medicationSchedule:
             MedicationSchedulesView()
                 .environment(themeManager)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
 
         case .medicationNew:
             MedicationAddView()
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
                 .environment(themeManager)
 
         case .mealTimeSettings:
             MealTimeListView()
                 .environment(themeManager)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
 
         case .settings:
             SettingsView()
                 .environment(themeManager)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
 
         case .help:
             HelpView()
                 .environment(themeManager)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
 
         case .medication(let id):
             medicationDestination(id: id)
@@ -225,7 +220,7 @@ struct HomeView: View {
 
         if let medication = try? modelContext.fetch(descriptor).first {
             MedicationDetailView(medicationID: medication.id)
-                .environmentObject(navigationRouter)
+                .environment(navigationRouter)
                 .environment(themeManager)
         } else {
             Text("Medication not found")
@@ -272,7 +267,7 @@ struct HomeView: View {
         HomeView()
     }
     .modelContainer(PreviewData.container)
-    .environmentObject(NavigationRouter())
+    .environment(NavigationRouter())
     .environmentObject(SubscriptionService())
     .environment(themeManager)
 }

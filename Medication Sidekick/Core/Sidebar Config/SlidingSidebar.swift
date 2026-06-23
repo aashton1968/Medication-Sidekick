@@ -120,7 +120,7 @@ struct SlidingSidebar<Content: View, Sidebar: View>: View {
 // Custom Menu Item Component
 struct SidebarMenuItemView: View {
     
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     
     let icon: String
     //let title: String
@@ -157,10 +157,6 @@ struct SidebarMenuItemView: View {
     }
 }
 
-
-struct CurrentUserSettingsToken: Hashable, Codable {
-    static let shared = CurrentUserSettingsToken()
-}
 
 extension SidebarMenuTargets {
     static func from(route: Route?) -> SidebarMenuTargets? {

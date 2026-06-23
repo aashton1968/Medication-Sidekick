@@ -74,16 +74,13 @@ struct Medication_SidekickApp: App {
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "AppInit")
 
     @StateObject private var subscriptionService = SubscriptionService()
-    @StateObject private var navigationRouter = NavigationRouter()
+    @State private var navigationRouter = NavigationRouter()
     @Environment(\.scenePhase) private var scenePhase
 
     @State var themeManager = ThemeManager()
 
     
     
-    
-    // Storage object for various data items
-    //@AppStorage(AppStorageKeys.hasSetupData.rawValue) var revenueCatUserId: String = ""
     
     init() {
         UNUserNotificationCenter.current().delegate = AppNotificationDelegate.shared
@@ -132,7 +129,7 @@ struct Medication_SidekickApp: App {
         WindowGroup {
             if let container = sharedModelContainer {
                 HomeView()
-                    .environmentObject(navigationRouter)
+                    .environment(navigationRouter)
                     .environmentObject(subscriptionService)
                     .environment(themeManager)
                     .toolbarBackground(

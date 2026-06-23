@@ -18,7 +18,7 @@ struct MedicationListView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) var themeManager
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     @EnvironmentObject var subscriptionService: SubscriptionService
     
     @Query
@@ -125,28 +125,20 @@ struct MedicationListView: View {
             VStack(spacing: 12) {
                 PaywallView(displayCloseButton: true)
                     .onPurchaseCompleted { customerInfo in
-                        Task { @MainActor in
-                            handlePaywallSuccess(with: customerInfo, source: "Purchase")
-                        }
+                        handlePaywallSuccess(with: customerInfo, source: "Purchase")
                     }
                     .onPurchaseFailure { error in
-                        Task { @MainActor in
-                            paywallMessageTitle = "Purchase Failed"
-                            paywallMessageBody = error.localizedDescription
-                            showingPaywallMessage = true
-                        }
+                        paywallMessageTitle = "Purchase Failed"
+                        paywallMessageBody = error.localizedDescription
+                        showingPaywallMessage = true
                     }
                     .onRestoreCompleted { customerInfo in
-                        Task { @MainActor in
-                            handlePaywallSuccess(with: customerInfo, source: "Restore")
-                        }
+                        handlePaywallSuccess(with: customerInfo, source: "Restore")
                     }
                     .onRestoreFailure { error in
-                        Task { @MainActor in
-                            paywallMessageTitle = "Restore Failed"
-                            paywallMessageBody = error.localizedDescription
-                            showingPaywallMessage = true
-                        }
+                        paywallMessageTitle = "Restore Failed"
+                        paywallMessageBody = error.localizedDescription
+                        showingPaywallMessage = true
                     }
 
                 Button {
@@ -227,7 +219,7 @@ struct MedicationListView: View {
         )
 
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootVC = windowScene.windows.first?.rootViewController else { return }
+              let rootVC = windowScene.keyWindow?.rootViewController else { return }
 
         var topVC = rootVC
         while let presented = topVC.presentedViewController {
@@ -275,7 +267,7 @@ struct MedicationListView: View {
 
     return MedicationListView()
         .modelContainer(container)
-        .environmentObject(NavigationRouter())
+        .environment(NavigationRouter())
         .environmentObject(SubscriptionService())
         .environment(ThemeManager())
 }

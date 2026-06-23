@@ -8,7 +8,7 @@ import SwiftUI
 
 struct SidebarContentView: View {
     
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     @Environment(ThemeManager.self) var themeManager
     
     var body: some View {
@@ -25,7 +25,7 @@ struct SidebarContentView: View {
                 SidebarMenuItemView(icon: "gearshape.fill", target: .settings)
                 
             }
-            .environmentObject(navigationRouter)
+            .environment(navigationRouter)
            
             
             Spacer()
@@ -78,6 +78,6 @@ enum SidebarMenuTargets {
     let themeManager = ThemeManager()
     
     SidebarContentView()
-        .environmentObject(navigationRouter)
+        .environment(navigationRouter)
         .environment(themeManager)
 }

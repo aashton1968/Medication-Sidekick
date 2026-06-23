@@ -216,7 +216,7 @@ private struct DailyStatusCardView: View {
 
 struct TodaySnapshotSection: View {
 
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) var themeManager
     @Query(sort: \MealTimeSetting.sortOrder) private var mealTimeSettings: [MealTimeSetting]
@@ -347,7 +347,7 @@ struct TodaySnapshotSection: View {
 
 struct TodayView: View {
 
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) var themeManager
     
@@ -591,7 +591,7 @@ struct TodayView: View {
     }
     .modelContainer(container)
     .environment(themeManager)
-    .environmentObject(NavigationRouter())
+    .environment(NavigationRouter())
 }
 
 #Preview("Daily Status Card") {

@@ -115,5 +115,5 @@ private struct ScheduleRowView: View {
     }
     .modelContainer(container)
     .environment(themeManager)
-    .environmentObject(NavigationRouter())
+    .environment(NavigationRouter())
 }

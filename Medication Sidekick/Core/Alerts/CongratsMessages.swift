@@ -26,10 +26,4 @@ enum CongratsMessages {
         return genericSingleDoseMessages.randomElement() ?? "Great job!"
     }
 
-    static func forBulkTaken(count: Int) -> String {
-        if count == 1 {
-            return "Great job - 1 dose marked as taken!"
-        }
-        return "Awesome - \(count) doses marked as taken!"
-    }
 }

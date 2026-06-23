@@ -6,21 +6,18 @@
 //
 
 import SwiftUI
-import Combine
 
-@MainActor
-final class NavigationRouter: ObservableObject {
-    @Published var path = NavigationPath()
-    @Published var currentRoute: Route? = .home
+@Observable
+final class NavigationRouter {
+    var path = NavigationPath()
+    var currentRoute: Route? = .home
 
     func navigate(_ route: Route) {
-        // optional: clear the path for "root" routes
         if route == .home {
             path = NavigationPath()
         } else {
             path.append(route)
         }
-
         currentRoute = route
     }
 

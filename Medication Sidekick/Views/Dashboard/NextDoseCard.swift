@@ -264,5 +264,5 @@ private struct SlotDoseRow: View {
     }
     .modelContainer(container)
     .environment(themeManager)
-    .environmentObject(NavigationRouter())
+    .environment(NavigationRouter())
 }

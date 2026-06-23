@@ -12,7 +12,7 @@ struct MedicationDetailView: View {
     
     // MARK: - Dependencies
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject var navigationRouter: NavigationRouter
+    @Environment(NavigationRouter.self) var navigationRouter
     @Environment(ThemeManager.self) var themeManager
     @Environment(\.dismiss) private var dismiss
 
@@ -301,7 +301,7 @@ struct MedicationDetailView: View {
 
         return NavigationStack {
             MedicationDetailView(medicationID: medication.id)
-                .environmentObject(NavigationRouter())
+                .environment(NavigationRouter())
                 .environment(ThemeManager())
         }
         .modelContainer(container)
