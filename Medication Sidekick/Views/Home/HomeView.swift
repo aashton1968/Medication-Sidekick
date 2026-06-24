@@ -12,7 +12,7 @@ import os.log
 struct HomeView: View {
     
     @Environment(NavigationRouter.self) var navigationRouter
-    @EnvironmentObject var subscriptionService: SubscriptionService
+    @Environment(SubscriptionService.self) var subscriptionService
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) var themeManager
     
@@ -268,7 +268,7 @@ struct HomeView: View {
     }
     .modelContainer(PreviewData.container)
     .environment(NavigationRouter())
-    .environmentObject(SubscriptionService())
+    .environment(SubscriptionService())
     .environment(themeManager)
 }
 #endif

@@ -7,8 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import RevenueCat
-import RevenueCatUI
 
 struct MedicationListView: View {
     private enum PremiumAction {
@@ -19,16 +17,13 @@ struct MedicationListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) var themeManager
     @Environment(NavigationRouter.self) var navigationRouter
-    @EnvironmentObject var subscriptionService: SubscriptionService
+    @Environment(SubscriptionService.self) var subscriptionService
     
     @Query
     private var medications: [Medication]
 
     @State private var showingAdd = false
     @State private var showingPaywall = false
-    @State private var showingPaywallMessage = false
-    @State private var paywallMessageTitle = "Subscription"
-    @State private var paywallMessageBody = ""
     @State private var pendingPremiumAction: PremiumAction?
     
     private var sortedMedications: [Medication] {
@@ -121,74 +116,21 @@ struct MedicationListView: View {
         .sheet(isPresented: $showingAdd) {
             MedicationAddView()
         }
-        .sheet(isPresented: $showingPaywall) {
-            VStack(spacing: 12) {
-                PaywallView(displayCloseButton: true)
-                    .onPurchaseCompleted { customerInfo in
-                        handlePaywallSuccess(with: customerInfo, source: "Purchase")
-                    }
-                    .onPurchaseFailure { error in
-                        paywallMessageTitle = "Purchase Failed"
-                        paywallMessageBody = error.localizedDescription
-                        showingPaywallMessage = true
-                    }
-                    .onRestoreCompleted { customerInfo in
-                        handlePaywallSuccess(with: customerInfo, source: "Restore")
-                    }
-                    .onRestoreFailure { error in
-                        paywallMessageTitle = "Restore Failed"
-                        paywallMessageBody = error.localizedDescription
-                        showingPaywallMessage = true
-                    }
-
-                Button {
-                    showingPaywall = false
-                } label: {
-                    Text("Dismiss for now")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "#C10007"))
-                .padding(.horizontal)
-                .padding(.bottom, 12)
-                .accessibilityLabel("Dismiss subscription for now")
+        .sheet(isPresented: $showingPaywall, onDismiss: {
+            guard subscriptionService.isPro, let action = pendingPremiumAction else {
+                pendingPremiumAction = nil
+                return
             }
-        }
-        .alert(paywallMessageTitle, isPresented: $showingPaywallMessage) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(paywallMessageBody)
-        }
-    }
-
-    @MainActor
-    private func handlePaywallSuccess(with customerInfo: CustomerInfo, source: String) {
-        let hasEntitlement = customerInfo.entitlements[subscriptionService.requiredEntitlementID]?.isActive == true
-        guard hasEntitlement else {
-            paywallMessageTitle = "\(source) Complete"
-            paywallMessageBody = "No active \(subscriptionService.requiredEntitlementID) subscription was found for this Apple ID."
-            showingPaywallMessage = true
             pendingPremiumAction = nil
-            return
-        }
-
-        let nextAction = pendingPremiumAction
-        pendingPremiumAction = nil
-        showingPaywall = false
-
-        // Presenting another sheet or UIActivityViewController in the same turn as dismissing
-        // the paywall sheet often crashes; defer until after the dismiss transaction completes.
-        Task { @MainActor in
-            switch nextAction {
-            case .shareMedications:
-                presentShareSheet()
-            case .addMedication:
-                showingAdd = true
-            case .none:
-                showingAdd = true
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                switch action {
+                case .shareMedications: presentShareSheet()
+                case .addMedication: showingAdd = true
+                }
             }
+        }) {
+            SubscriptionSheetView()
         }
     }
 
@@ -268,7 +210,7 @@ struct MedicationListView: View {
     return MedicationListView()
         .modelContainer(container)
         .environment(NavigationRouter())
-        .environmentObject(SubscriptionService())
+        .environment(SubscriptionService())
         .environment(ThemeManager())
 }
 

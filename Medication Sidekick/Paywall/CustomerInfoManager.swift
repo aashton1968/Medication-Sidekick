@@ -2,89 +2,76 @@
 //  CustomerInfoManager.swift
 //  Medication Sidekick
 //
-//  Created by Alan Ashton on 2026-01-27.
-//
-
 
 import Foundation
+import Observation
+import StoreKit
 import os.log
-import RevenueCat
-import Combine
 
+@Observable
 @MainActor
-final class SubscriptionService: NSObject, ObservableObject, PurchasesDelegate {
+final class SubscriptionService {
     static let freeMedicationLimit = 5
-    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "SubscriptionService")
-    private static let automaticRestoreRetryInterval: TimeInterval = 12 * 60 * 60
+    static let proProductID = "alanashton.com.medicationsidekick.pro.access.annual"
 
-    @Published private(set) var customerInfo: CustomerInfo?
-    @Published private(set) var isPro = false
-    @Published private(set) var hasLoadedCustomerInfo = false
-    @Published private(set) var subscriptionPriceDisclosure: String?
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick",
+        category: "SubscriptionService"
+    )
 
+    private(set) var isPro = false
+    private(set) var hasLoadedCustomerInfo = false
+    private(set) var subscriptionPriceDisclosure: String?
+
+    private(set) var proProduct: Product?
+    private var updatesTask: Task<Void, Never>?
     private var hasStarted = false
-    private var lastAutomaticRestoreAttempt: Date?
-
-    override init() {
-        super.init()
-    }
 
     func start() async {
         guard !hasStarted else { return }
         hasStarted = true
 
-        Purchases.shared.delegate = self
-        await refreshSubscriptionStatus(allowAutomaticRestore: true)
-        await refreshPaywallDisclosure()
-    }
-
-    func refreshCustomerInfo() async {
-        do {
-            let info = try await Purchases.shared.customerInfo()
-            updateState(with: info)
-        } catch {
-            Self.logger.error("Error fetching customer info: \(error.localizedDescription, privacy: .public)")
-            hasLoadedCustomerInfo = true
+        updatesTask = Task { [weak self] in
+            for await update in Transaction.updates {
+                if case .verified(let transaction) = update {
+                    await self?.refreshPurchaseStatus()
+                    await transaction.finish()
+                }
+            }
         }
-    }
 
-    func restorePurchases() async throws {
-        let info = try await Purchases.shared.restorePurchases()
-        updateState(with: info)
-    }
-
-    func syncPurchases() async {
-        do {
-            let info = try await Purchases.shared.syncPurchases()
-            updateState(with: info)
-        } catch {
-            Self.logger.error("Error syncing purchases: \(error.localizedDescription, privacy: .public)")
-        }
+        await refreshPurchaseStatus()
+        await loadProduct()
     }
 
     func refreshSubscriptionStatus(allowAutomaticRestore: Bool) async {
-        await refreshCustomerInfo()
-        guard !isPro else { return }
-
-        await syncPurchases()
-        guard !isPro, allowAutomaticRestore else { return }
-
-        await attemptAutomaticRestoreIfNeeded()
+        await refreshPurchaseStatus()
     }
 
     func refreshPaywallDisclosure() async {
-        do {
-            let offerings = try await Purchases.shared.offerings()
-            guard let package = offerings.current?.availablePackages.first else {
-                subscriptionPriceDisclosure = nil
-                return
+        await loadProduct()
+    }
+
+    func restorePurchases() async throws {
+        try await AppStore.sync()
+        await refreshPurchaseStatus()
+    }
+
+    func purchase() async throws -> Bool {
+        guard let product = proProduct else { return false }
+        let result = try await product.purchase()
+        switch result {
+        case .success(let verification):
+            if case .verified(let transaction) = verification {
+                await refreshPurchaseStatus()
+                await transaction.finish()
+                return true
             }
-            let title = package.storeProduct.localizedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-            let price = package.storeProduct.localizedPriceString
-            let period = package.storeProduct.subscriptionPeriod?.periodTitle ?? "subscription period"
-            subscriptionPriceDisclosure = "\(title): \(price) / \(period), auto-renewing."
-        } catch {
-            subscriptionPriceDisclosure = nil
+            return false
+        case .userCancelled, .pending:
+            return false
+        @unknown default:
+            return false
         }
     }
 
@@ -92,56 +79,46 @@ final class SubscriptionService: NSObject, ObservableObject, PurchasesDelegate {
         isPro || currentCount < Self.freeMedicationLimit
     }
 
-    var requiredEntitlementID: String {
-        Constants.proEntitlementID
-    }
+    // MARK: - Private
 
-    private func updateState(with info: CustomerInfo) {
-        customerInfo = info
-        isPro = info.entitlements[Constants.proEntitlementID]?.isActive == true
+    private func refreshPurchaseStatus() async {
+        var hasActiveSub = false
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let transaction) = result,
+               transaction.productID == Self.proProductID,
+               transaction.revocationDate == nil {
+                hasActiveSub = true
+                break
+            }
+        }
+        isPro = hasActiveSub
         hasLoadedCustomerInfo = true
     }
 
-    private func attemptAutomaticRestoreIfNeeded() async {
-        let now = Date()
-        if let lastAutomaticRestoreAttempt,
-           now.timeIntervalSince(lastAutomaticRestoreAttempt) < Self.automaticRestoreRetryInterval {
-            return
-        }
-        lastAutomaticRestoreAttempt = now
-
+    private func loadProduct() async {
         do {
-            let info = try await Purchases.shared.restorePurchases()
-            updateState(with: info)
+            let products = try await Product.products(for: [Self.proProductID])
+            proProduct = products.first
+            if let product = proProduct {
+                let period = product.subscription?.subscriptionPeriod.periodTitle ?? "year"
+                subscriptionPriceDisclosure = "\(product.displayName): \(product.displayPrice) / \(period), auto-renewing."
+            }
         } catch {
-            Self.logger.error("Automatic restore attempt failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    // MARK: - PurchasesDelegate
-    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
-        Task { @MainActor in
-            self.updateState(with: customerInfo)
+            Self.logger.error("Failed to load StoreKit products: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
 
 typealias CustomerInfoManager = SubscriptionService
 
-private extension SubscriptionPeriod {
+private extension Product.SubscriptionPeriod {
     var periodTitle: String {
         switch unit {
-        case .day:
-            return value == 1 ? "day" : "\(value) days"
-        case .week:
-            return value == 1 ? "week" : "\(value) weeks"
-        case .month:
-            return value == 1 ? "month" : "\(value) months"
-        case .year:
-            return value == 1 ? "year" : "\(value) years"
-        @unknown default:
-            return "period"
+        case .day:   return value == 1 ? "day" : "\(value) days"
+        case .week:  return value == 1 ? "week" : "\(value) weeks"
+        case .month: return value == 1 ? "month" : "\(value) months"
+        case .year:  return value == 1 ? "year" : "\(value) years"
+        @unknown default: return "period"
         }
     }
 }
-

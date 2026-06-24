@@ -9,9 +9,14 @@ This is an iOS app built with Xcode. There are no test targets.
 - **Build/Run**: Open `Medication Sidekick.xcodeproj` in Xcode and use ⌘R or the scheme selector.
 - **Version bump**: `bash _set-version-bump.sh` — sets marketing version and generates a date-based build number via `agvtool`.
 
+## Coding Standards
+
+- **Always use `@Observable`** — never `ObservableObject`, `@Published`, `@StateObject`, or `@EnvironmentObject`. Inject with `.environment(obj)`, read with `@Environment(Type.self)`.
+- **Every view must have a `#Preview`** — add one at the bottom of every SwiftUI view file.
+
 ## Architecture Overview
 
-**Stack**: SwiftUI · SwiftData (CloudKit) · RevenueCat · UserNotifications
+**Stack**: SwiftUI · SwiftData (CloudKit) · StoreKit 2 · UserNotifications
 
 ### Data Models (`Models/`)
 
@@ -28,7 +33,7 @@ Three SwiftData `@Model` classes form the persistence layer:
 ### App Startup (`Services/AppStartupSequence.swift`)
 
 `AppStartupSequence.runPhase1IfNeeded(...)` is called once from `HomeView.task`. It runs in order:
-1. `SubscriptionService.start()` — starts RevenueCat
+1. `SubscriptionService.start()` — begins listening for StoreKit transaction updates and loads the pro product
 2. `MealTimeSettingSeedService.seedIfNeeded()` — seeds default meal slots
 3. `MedicationSeedService.seedIfNeeded()` — seeds default medications
 4. `MedicationBootstrap.generateTodayEvents()` — creates today's dose rows
@@ -46,11 +51,10 @@ Three SwiftData `@Model` classes form the persistence layer:
 - **`MedicationAdherenceService`** — pure struct that computes `AdherenceSummary` and per-medication summaries from dose arrays. Also promotes overdue `scheduled` doses to `missed` via `syncMissedStatuses()`. Grace period is `Constants.medicationMissedGracePeriod` (2 hours).
 - **`MedicationNotificationService`** — manages `UNUserNotificationCenter`. Groups doses by (mealKey, scheduledDate) into at most 64 notifications. Notification IDs use the prefix `meddose.`. Re-syncs are triggered by the `medicationDidChange` `Notification.Name`.
 - **`MedicationSeedService`** (Swift `actor`) — seeds default medications, and reconciles CloudKit-introduced duplicates via logical + relaxed identity signatures. Keeper selection prefers the record with more dose history.
-- **`AppUserIdentityService`** — generates/persists a stable RevenueCat user ID across `NSUbiquitousKeyValueStore` and `UserDefaults`.
 
 ### Navigation
 
-`NavigationRouter` (`ObservableObject`) owns a `NavigationPath` and the active `Route` enum case. `HomeView` hosts the single `NavigationStack` and its `navigationDestination(for: Route.self)` switch, keeping all navigation wiring in one place.
+`NavigationRouter` (`@Observable`) owns a `NavigationPath` and the active `Route` enum case. `HomeView` hosts the single `NavigationStack` and its `navigationDestination(for: Route.self)` switch, keeping all navigation wiring in one place.
 
 ### Theming
 
@@ -58,9 +62,11 @@ Three SwiftData `@Model` classes form the persistence layer:
 
 ### Subscription / Paywall
 
-`SubscriptionService` (RevenueCat `PurchasesDelegate`) publishes `isPro` and `hasLoadedCustomerInfo`. The free tier allows up to 5 medications (`SubscriptionService.freeMedicationLimit`). The entitlement ID is `Constants.proEntitlementID`.
+`SubscriptionService` (`@Observable`) uses StoreKit 2 natively — no third-party SDK. It exposes `isPro`, `hasLoadedCustomerInfo`, and `subscriptionPriceDisclosure`. The free tier allows up to 5 medications (`SubscriptionService.freeMedicationLimit`). The product ID is `SubscriptionService.proProductID`.
 
-**Key gotcha**: `Purchases.configure` must always receive the production API key, even in DEBUG, because RevenueCat's SDK calls `fatalError` on a `test_` key in Release builds. `Constants.revenueCatKeyForPurchasesConfigure` enforces this.
+`SubscriptionSheetView` is the native paywall UI (red diagonal header, black pricing card, feature list, pinned footer). It is presented as a sheet from `HomeView` (initial prompt) and `MedicationListView` (limit gate).
+
+On startup, `SubscriptionService.start()` opens a `Transaction.updates` listener for real-time entitlement changes and calls `Transaction.currentEntitlements` to determine `isPro`. Restore uses `AppStore.sync()`.
 
 ### Toast System
 

@@ -12,7 +12,7 @@ struct SettingsView: View {
 
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var subscriptionService: SubscriptionService
+    @Environment(SubscriptionService.self) private var subscriptionService
     @AppStorage(AppStorageKeys.medicationNotificationsEnabled.rawValue) private var notificationsEnabled: Bool = true
     @AppStorage(AppStorageKeys.medicationReminderLeadTimeMinutes.rawValue) private var reminderLeadTimeMinutes: Int = 0
     @AppStorage(AppStorageKeys.notificationPrivacyEnabled.rawValue) private var notificationPrivacyEnabled: Bool = false
@@ -291,5 +291,5 @@ struct SettingsView: View {
         SettingsView()
     }
     .environment(theme)
-    .environmentObject(SubscriptionService())
+    .environment(SubscriptionService())
 }

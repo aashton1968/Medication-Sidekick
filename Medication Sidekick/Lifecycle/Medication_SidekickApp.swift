@@ -8,7 +8,6 @@
 import os.log
 import SwiftData
 import SwiftUI
-import RevenueCat
 import UserNotifications
 
 final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
@@ -73,7 +72,7 @@ private struct DatabaseUnavailableView: View {
 struct Medication_SidekickApp: App {
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "AppInit")
 
-    @StateObject private var subscriptionService = SubscriptionService()
+    @State private var subscriptionService = SubscriptionService()
     @State private var navigationRouter = NavigationRouter()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -99,18 +98,6 @@ struct Medication_SidekickApp: App {
         UINavigationBar.appearance().tintColor = UIColor(chromeTheme.textOnAccent)
         
         
-        #if DEBUG
-        Purchases.logLevel = .debug
-        #else
-        Purchases.logLevel = .warn
-        #endif
-        let appUserID = AppUserIdentityService.shared.getOrCreateAppUserID()
-        Purchases.configure(
-            with: Configuration.Builder(withAPIKey: Constants.revenueCatKeyForPurchasesConfigure)
-                .with(appUserID: appUserID)
-                .with(storeKitVersion: .storeKit2)
-                .build()
-        )
     }
     
     
@@ -130,7 +117,7 @@ struct Medication_SidekickApp: App {
             if let container = sharedModelContainer {
                 HomeView()
                     .environment(navigationRouter)
-                    .environmentObject(subscriptionService)
+                    .environment(subscriptionService)
                     .environment(themeManager)
                     .toolbarBackground(
                         LinearGradient(

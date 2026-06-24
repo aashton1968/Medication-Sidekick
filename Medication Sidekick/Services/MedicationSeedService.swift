@@ -165,11 +165,16 @@ final class MedicationSeedService {
                 existing = try context.fetch(FetchDescriptor<Medication>())
             }
 
-            let existingSignatures = Set(existing.map { signature(for: $0) })
+            // Use relaxed identity (name+dosage+type) so that user-edited medications
+            // are not re-seeded when they change their schedule, stock, or dose quantity.
+            // The full signature includes mealsRaw/currentStock, so any user edit would
+            // cause a false "missing seed" detection and insert a duplicate with the
+            // original schedule — which then wins the merge because its updatedAt is newer.
+            let existingRelaxedIDs = Set(existing.map { relaxedIdentitySignature(for: $0) })
             let meds = buildDefaultMedications()
             var inserted = 0
 
-            for med in meds where !existingSignatures.contains(signature(for: med)) {
+            for med in meds where !existingRelaxedIDs.contains(relaxedIdentitySignature(for: med)) {
                 context.insert(med)
                 inserted += 1
                 hasChanges = true
