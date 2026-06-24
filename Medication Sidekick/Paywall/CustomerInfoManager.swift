@@ -20,7 +20,7 @@ final class SubscriptionService {
     )
 
     private(set) var isPro = false
-    private(set) var hasLoadedCustomerInfo = false
+    private(set) var hasLoadedStatus = false
     private(set) var subscriptionPriceDisclosure: String?
     private(set) var proTransactionID: Transaction.ID?
 
@@ -98,7 +98,7 @@ final class SubscriptionService {
         }
         isPro = hasActiveSub
         proTransactionID = foundTransactionID
-        hasLoadedCustomerInfo = true
+        hasLoadedStatus = true
     }
 
     private func loadProduct() async {
@@ -121,7 +121,6 @@ enum PurchaseOutcome {
     case pending
 }
 
-typealias CustomerInfoManager = SubscriptionService
 
 private extension Product.SubscriptionPeriod {
     var periodTitle: String {

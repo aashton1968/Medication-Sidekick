@@ -238,20 +238,39 @@ struct TodaySnapshotSection: View {
         makeSlotGroups(from: todayDoses, settings: mealTimeSettings)
     }
 
-    private var nextSlot: TimeSlotGroup? {
-        slotGroups.first { !$0.isComplete }
+    private var pastIncompleteSlots: [TimeSlotGroup] {
+        let now = Date()
+        return slotGroups.filter { group in
+            !group.isComplete && group.doses.allSatisfy { $0.scheduledDate < now }
+        }
+    }
+
+    private var nextUpcomingSlot: TimeSlotGroup? {
+        let now = Date()
+        return slotGroups.first { group in
+            !group.isComplete && group.doses.contains { $0.scheduledDate >= now }
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             DailyStatusCardView(snapshot: dailyStatusSnapshot)
 
-            if let nextSlot {
+            ForEach(pastIncompleteSlots) { group in
                 NextMedsCard(
-                    doses: nextSlot.doses,
-                    slotName: nextSlot.name,
-                    slotTime: nextSlot.time,
-                    slotSymbol: nextSlot.symbol
+                    doses: group.doses,
+                    slotName: group.name,
+                    slotTime: group.time,
+                    slotSymbol: group.symbol
+                )
+                .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .scale(scale: 0.98))))
+            }
+            if let slot = nextUpcomingSlot {
+                NextMedsCard(
+                    doses: slot.doses,
+                    slotName: slot.name,
+                    slotTime: slot.time,
+                    slotSymbol: slot.symbol
                 )
                 .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .scale(scale: 0.98))))
             }
@@ -285,7 +304,7 @@ struct TodaySnapshotSection: View {
         .task {
             await refreshDoses()
         }
-        .animation(.easeOut(duration: 0.28), value: nextSlot?.id)
+        .animation(.easeOut(duration: 0.28), value: slotGroups.filter { !$0.isComplete }.map(\.id))
         .onReceive(NotificationCenter.default.publisher(for: .medicationDidChange)) { _ in
             fetchTodayDoses()
             refreshDailyStatusSnapshot()
@@ -396,8 +415,22 @@ struct TodayView: View {
         makeSlotGroups(from: todayDoses, settings: mealTimeSettings)
     }
 
-    private var nextSlot: TimeSlotGroup? {
-        slotGroups.first { !$0.isComplete }
+    private var pastIncompleteSlots: [TimeSlotGroup] {
+        guard calendar.isDateInToday(selectedDate) else { return [] }
+        let now = Date()
+        return slotGroups.filter { group in
+            !group.isComplete && group.doses.allSatisfy { $0.scheduledDate < now }
+        }
+    }
+
+    private var nextUpcomingSlot: TimeSlotGroup? {
+        let now = Date()
+        if calendar.isDateInToday(selectedDate) {
+            return slotGroups.first { group in
+                !group.isComplete && group.doses.contains { $0.scheduledDate >= now }
+            }
+        }
+        return slotGroups.first { !$0.isComplete }
     }
 
     private var dailyStatusSnapshot: DailyStatusSnapshot {
@@ -513,14 +546,25 @@ struct TodayView: View {
                        .padding(.horizontal, 12)
                        .background(themeManager.selectedTheme.surfaceBase)
                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                   } else if let nextSlot {
-                       NextMedsCard(
-                           doses: nextSlot.doses,
-                           slotName: nextSlot.name,
-                           slotTime: nextSlot.time,
-                           slotSymbol: nextSlot.symbol
-                       )
-                       .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .scale(scale: 0.98))))
+                   } else {
+                       ForEach(pastIncompleteSlots) { group in
+                           NextMedsCard(
+                               doses: group.doses,
+                               slotName: group.name,
+                               slotTime: group.time,
+                               slotSymbol: group.symbol
+                           )
+                           .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .scale(scale: 0.98))))
+                       }
+                       if let slot = nextUpcomingSlot {
+                           NextMedsCard(
+                               doses: slot.doses,
+                               slotName: slot.name,
+                               slotTime: slot.time,
+                               slotSymbol: slot.symbol
+                           )
+                           .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .scale(scale: 0.98))))
+                       }
                    }
                }
            }
@@ -539,7 +583,7 @@ struct TodayView: View {
        .onAppear {
            Task { await refreshDoses() }
        }
-       .animation(.easeOut(duration: 0.28), value: nextSlot?.id)
+       .animation(.easeOut(duration: 0.28), value: slotGroups.filter { !$0.isComplete }.map(\.id))
        .onReceive(NotificationCenter.default.publisher(for: .medicationDidChange)) { _ in
            fetchDoses(for: selectedDate)
        }

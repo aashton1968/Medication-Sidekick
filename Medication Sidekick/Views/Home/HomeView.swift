@@ -151,7 +151,7 @@ struct HomeView: View {
             sidebarOpen = false
             navigationRouter.navigate(.todayView)
         }
-        .onChange(of: subscriptionService.hasLoadedCustomerInfo) { _, loaded in
+        .onChange(of: subscriptionService.hasLoadedStatus) { _, loaded in
             guard loaded else { return }
             presentInitialSubscriptionPromptIfNeeded()
         }
@@ -252,7 +252,7 @@ struct HomeView: View {
 
     @MainActor
     private func presentInitialSubscriptionPromptIfNeeded() {
-        guard subscriptionService.hasLoadedCustomerInfo else { return }
+        guard subscriptionService.hasLoadedStatus else { return }
         guard !subscriptionService.isPro else { return }
         guard !hasShownInitialSubscriptionPrompt else { return }
         hasShownInitialSubscriptionPrompt = true
