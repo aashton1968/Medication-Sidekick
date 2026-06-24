@@ -2,15 +2,17 @@ import SwiftUI
 import StoreKit
 
 // TODO: Replace privacyPolicyURL with your actual privacy policy URL before shipping.
-private let privacyPolicyURL = URL(string: "https://example.com/privacy")!
-private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+private let privacyPolicyURL = URL(string: "https://github.com/aashton1968/Support/wiki/Privacy-Policy")!
+private let termsURL = URL(string: "https://github.com/aashton1968/Support/wiki/Terms-of-Use-(EULA)")!
 
-struct SubscriptionSheetView: View {
+struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SubscriptionService.self) private var subscriptionService
 
     @State private var isPurchasing = false
     @State private var isRestoring = false
+    @State private var isLoadingProduct = false
+    @State private var productLoadFailed = false
     @State private var errorMessage: String?
 
     private let accentRed = Color(hex: "#C10007")
@@ -40,9 +42,17 @@ struct SubscriptionSheetView: View {
             bottomBar
         }
         .task {
+            if subscriptionService.isPro { dismiss(); return }
             if subscriptionService.proProduct == nil {
+                isLoadingProduct = true
+                productLoadFailed = false
                 await subscriptionService.refreshPaywallDisclosure()
+                isLoadingProduct = false
+                productLoadFailed = subscriptionService.proProduct == nil
             }
+        }
+        .onChange(of: subscriptionService.isPro) { _, isPro in
+            if isPro { dismiss() }
         }
     }
 
@@ -95,23 +105,49 @@ struct SubscriptionSheetView: View {
 
     private var pricingCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("yearly")
-                .font(.subheadline)
-                .foregroundStyle(Color(.systemGray3))
-
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(subscriptionService.proProduct?.displayPrice ?? "—")
-                    .font(.system(size: 40, weight: .heavy))
-                    .foregroundStyle(.white)
-                Text("/yr")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color(.systemGray3))
-            }
-
-            if let monthly = monthlyPriceString() {
-                Text("\(monthly) per month, billed annually")
+            if isLoadingProduct {
+                ProgressView()
+                    .tint(Color(.systemGray3))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 12)
+            } else if productLoadFailed {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Could not load pricing")
+                        .font(.subheadline)
+                        .foregroundStyle(Color(.systemGray3))
+                    Button {
+                        Task {
+                            isLoadingProduct = true
+                            productLoadFailed = false
+                            await subscriptionService.refreshPaywallDisclosure()
+                            isLoadingProduct = false
+                            productLoadFailed = subscriptionService.proProduct == nil
+                        }
+                    } label: {
+                        Text("Retry")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                }
+            } else {
+                Text("yearly")
                     .font(.subheadline)
                     .foregroundStyle(Color(.systemGray3))
+
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(subscriptionService.proProduct?.displayPrice ?? "—")
+                        .font(.system(size: 40, weight: .heavy))
+                        .foregroundStyle(.white)
+                    Text("/yr")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color(.systemGray3))
+                }
+
+                if let monthly = monthlyPriceString() {
+                    Text("\(monthly) per month, billed annually")
+                        .font(.subheadline)
+                        .foregroundStyle(Color(.systemGray3))
+                }
             }
         }
         .padding(20)
@@ -177,7 +213,7 @@ struct SubscriptionSheetView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(accentRed)
-                .disabled(isPurchasing || isRestoring || subscriptionService.proProduct == nil)
+                .disabled(isPurchasing || isRestoring || isLoadingProduct || subscriptionService.proProduct == nil)
                 .padding(.horizontal, 20)
                 .accessibilityLabel("Subscribe to Medication SideKick Pro")
 
@@ -202,11 +238,11 @@ struct SubscriptionSheetView: View {
                     }
                     .disabled(isPurchasing || isRestoring)
 
-                    Link("Terms", destination: termsURL)
+                    Link("Terms (EULA)", destination: termsURL)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Link("Privacy", destination: privacyPolicyURL)
+                    Link("Privacy Policy", destination: privacyPolicyURL)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.primary)
                 }
@@ -232,8 +268,14 @@ struct SubscriptionSheetView: View {
         errorMessage = nil
         defer { isPurchasing = false }
         do {
-            let success = try await subscriptionService.purchase()
-            if success { dismiss() }
+            switch try await subscriptionService.purchase() {
+            case .purchased:
+                dismiss()
+            case .pending:
+                errorMessage = "Your purchase is awaiting approval. Pro Access will activate once it's approved."
+            case .cancelled:
+                break
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -245,7 +287,11 @@ struct SubscriptionSheetView: View {
         defer { isRestoring = false }
         do {
             try await subscriptionService.restorePurchases()
-            if subscriptionService.isPro { dismiss() }
+            if subscriptionService.isPro {
+                dismiss()
+            } else {
+                errorMessage = "No active Pro subscription was found for this Apple ID."
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -253,6 +299,6 @@ struct SubscriptionSheetView: View {
 }
 
 #Preview {
-    SubscriptionSheetView()
+    PaywallView()
         .environment(SubscriptionService())
 }

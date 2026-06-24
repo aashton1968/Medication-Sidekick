@@ -130,7 +130,7 @@ struct MedicationListView: View {
                 }
             }
         }) {
-            SubscriptionSheetView()
+            PaywallView()
         }
     }
 

@@ -22,6 +22,7 @@ final class SubscriptionService {
     private(set) var isPro = false
     private(set) var hasLoadedCustomerInfo = false
     private(set) var subscriptionPriceDisclosure: String?
+    private(set) var proTransactionID: Transaction.ID?
 
     private(set) var proProduct: Product?
     private var updatesTask: Task<Void, Never>?
@@ -57,21 +58,23 @@ final class SubscriptionService {
         await refreshPurchaseStatus()
     }
 
-    func purchase() async throws -> Bool {
-        guard let product = proProduct else { return false }
+    func purchase() async throws -> PurchaseOutcome {
+        guard let product = proProduct else { return .cancelled }
         let result = try await product.purchase()
         switch result {
         case .success(let verification):
             if case .verified(let transaction) = verification {
                 await refreshPurchaseStatus()
                 await transaction.finish()
-                return true
+                return .purchased
             }
-            return false
-        case .userCancelled, .pending:
-            return false
+            return .cancelled
+        case .userCancelled:
+            return .cancelled
+        case .pending:
+            return .pending
         @unknown default:
-            return false
+            return .cancelled
         }
     }
 
@@ -83,15 +86,18 @@ final class SubscriptionService {
 
     private func refreshPurchaseStatus() async {
         var hasActiveSub = false
+        var foundTransactionID: Transaction.ID?
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result,
                transaction.productID == Self.proProductID,
                transaction.revocationDate == nil {
                 hasActiveSub = true
+                foundTransactionID = transaction.id
                 break
             }
         }
         isPro = hasActiveSub
+        proTransactionID = foundTransactionID
         hasLoadedCustomerInfo = true
     }
 
@@ -107,6 +113,12 @@ final class SubscriptionService {
             Self.logger.error("Failed to load StoreKit products: \(error.localizedDescription, privacy: .public)")
         }
     }
+}
+
+enum PurchaseOutcome {
+    case purchased
+    case cancelled
+    case pending
 }
 
 typealias CustomerInfoManager = SubscriptionService

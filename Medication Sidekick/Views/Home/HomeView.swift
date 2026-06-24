@@ -123,7 +123,7 @@ struct HomeView: View {
                 .environment(themeManager)
         })
         .sheet(isPresented: $showingInitialSubscriptionPrompt) {
-            SubscriptionSheetView()
+            PaywallView()
         }
         
         .task {

@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import StoreKit
 import UserNotifications
 import UIKit
 
@@ -22,6 +23,8 @@ struct SettingsView: View {
     @State private var restoreMessage: String?
     @State private var restoreIsError = false
     @State private var isRestoringPurchases = false
+    @State private var showingManageSubscriptions = false
+    @State private var showingRefundRequest = false
     @State private var cleanupMessage: String?
     @State private var cleanupIsError = false
     @State private var isRunningCloudCleanup = false
@@ -111,7 +114,20 @@ struct SettingsView: View {
                 }
                 .disabled(isRestoringPurchases)
 
-                
+                if subscriptionService.isPro {
+                    Button {
+                        showingManageSubscriptions = true
+                    } label: {
+                        Label("Manage Subscription", systemImage: "creditcard.circle")
+                    }
+
+                    Button {
+                        showingRefundRequest = true
+                    } label: {
+                        Label("Request a Refund", systemImage: "arrow.uturn.backward.circle")
+                    }
+                }
+
                 if let restoreMessage {
                     Text(restoreMessage)
                         .font(.caption)
@@ -181,6 +197,11 @@ struct SettingsView: View {
             NotificationCenter.default.post(name: .medicationDidChange, object: nil)
         }
         .background(themeManager.selectedTheme.bgBase)
+        .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
+        .refundRequestSheet(
+            for: subscriptionService.proTransactionID ?? 0,
+            isPresented: $showingRefundRequest
+        )
 
     }
 
