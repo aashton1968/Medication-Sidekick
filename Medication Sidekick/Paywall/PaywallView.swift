@@ -298,7 +298,15 @@ struct PaywallView: View {
     }
 }
 
-#Preview {
+// MARK: - Previews
+// States driven by private @State (isPurchasing, isRestoring, productLoadFailed) are not
+// injectable from outside the view. Test those paths via SubscriptionServiceTests + the
+// StoreKit integration tests in the test target.
+
+#Preview("Default — product unavailable") {
     PaywallView()
         .environment(SubscriptionService())
 }
+
+// The "Already Pro" state auto-dismisses immediately, which can't be meaningfully
+// previewed here. Cover it via the StoreKit integration tests in the test target.

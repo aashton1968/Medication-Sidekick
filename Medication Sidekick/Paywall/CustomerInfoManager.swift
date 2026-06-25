@@ -35,8 +35,8 @@ final class SubscriptionService {
         updatesTask = Task { [weak self] in
             for await update in Transaction.updates {
                 if case .verified(let transaction) = update {
-                    await self?.refreshPurchaseStatus()
                     await transaction.finish()
+                    await self?.refreshPurchaseStatus()
                 }
             }
         }
@@ -64,8 +64,8 @@ final class SubscriptionService {
         switch result {
         case .success(let verification):
             if case .verified(let transaction) = verification {
-                await refreshPurchaseStatus()
                 await transaction.finish()
+                await refreshPurchaseStatus()
                 return .purchased
             }
             return .cancelled
@@ -115,7 +115,7 @@ final class SubscriptionService {
     }
 }
 
-enum PurchaseOutcome {
+enum PurchaseOutcome: Equatable {
     case purchased
     case cancelled
     case pending

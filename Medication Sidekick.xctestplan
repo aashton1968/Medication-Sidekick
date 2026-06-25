@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "038F2627-8DC8-4AEE-BB67-CB458F726C55",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Medication Sidekick.xcodeproj",
+      "identifier" : "35AD42DB2F271E0700AA5470",
+      "name" : "Medication Sidekick"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Medication Sidekick.xcodeproj",
+        "identifier" : "E704C9AC2FED89AA0053EBF2",
+        "name" : "Medication SidekickTests"
+      }
+    }
+  ],
+  "version" : 1
+}
