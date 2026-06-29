@@ -8,7 +8,6 @@
 import SwiftUI
 import SwiftData
 import Charts
-import os.log
 
 // MARK: - Chart Data
 
@@ -63,10 +62,7 @@ struct WeeklyCompletionChartView: View {
     @Query private var doses: [MedicationDose]
     @Environment(ThemeManager.self) private var themeManager
     @State private var chartMode: WeeklyChartMode = .summary
-    private static let chartSafetyLogger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick",
-        category: "ChartSafety"
-    )
+
 
     @State private var weekStart: Date = {
         var cal = Calendar.current
@@ -310,21 +306,11 @@ struct WeeklyCompletionChartView: View {
         defaultCornerRadius: CGFloat
     ) -> PieSliceStyle {
         guard slices.count > 1 else {
-            logChartSafetyFallback(
-                reason: "single_slice",
-                slices: slices,
-                smallestFraction: 1
-            )
             return PieSliceStyle(angularInset: 0, cornerRadius: 0)
         }
 
         let total = slices.reduce(0) { $0 + max(0, $1.count) }
         guard total > 0 else {
-            logChartSafetyFallback(
-                reason: "non_positive_total",
-                slices: slices,
-                smallestFraction: 0
-            )
             return PieSliceStyle(angularInset: 0, cornerRadius: 0)
         }
 
@@ -336,30 +322,12 @@ struct WeeklyCompletionChartView: View {
 
         let hasTinySlice = smallestFraction < 0.03
         if hasTinySlice {
-            logChartSafetyFallback(
-                reason: "tiny_slice",
-                slices: slices,
-                smallestFraction: smallestFraction
-            )
             return PieSliceStyle(angularInset: 0, cornerRadius: 0)
         }
 
         return PieSliceStyle(
             angularInset: defaultInset,
             cornerRadius: defaultCornerRadius
-        )
-    }
-
-    private func logChartSafetyFallback(
-        reason: StaticString,
-        slices: [DoseStatusSlice],
-        smallestFraction: Double
-    ) {
-        let payload = slices
-            .map { "\($0.label):\($0.count)" }
-            .joined(separator: ",")
-        Self.chartSafetyLogger.notice(
-            "chart_style_fallback reason=\(reason, privacy: .public) slices=\(slices.count, privacy: .public) min_fraction=\(smallestFraction, format: .fixed(precision: 4), privacy: .public) payload=\(payload, privacy: .public)"
         )
     }
 

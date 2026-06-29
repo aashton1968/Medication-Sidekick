@@ -24,7 +24,7 @@
 /* Begin PBXFileReference section */
 		35AD42DC2F271E0700AA5470 /* Medication Sidekick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Medication Sidekick.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E704C9AD2FED89AA0053EBF2 /* Medication SidekickTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Medication SidekickTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E704CA672FED9EE10053EBF2 /* Medication Sidekick.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Medication Sidekick.xctestplan"; sourceTree = "<group>"; };
+		E704CA672FED9EE10053EBF2 /* Medication Sidekick.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Medication Sidekick.xctestplan"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -253,7 +253,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Medication Sidekick/Lifecycle/Medication_Sidekick.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.06.25.10.23;
+				CURRENT_PROJECT_VERSION = 2026.06.25.10.48;
 				DEVELOPMENT_TEAM = 4X7DCR4G6X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -294,7 +294,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Medication Sidekick/Lifecycle/Medication_Sidekick.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.06.25.10.23;
+				CURRENT_PROJECT_VERSION = 2026.06.25.10.48;
 				DEVELOPMENT_TEAM = 4X7DCR4G6X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -455,7 +455,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.06.25.10.23;
+				CURRENT_PROJECT_VERSION = 2026.06.25.10.48;
 				DEVELOPMENT_TEAM = 4X7DCR4G6X;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
@@ -463,6 +463,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alanashton.Medication-Sidekick.Medication-SidekickTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -477,7 +480,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026.06.25.10.23;
+				CURRENT_PROJECT_VERSION = 2026.06.25.10.48;
 				DEVELOPMENT_TEAM = 4X7DCR4G6X;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
@@ -485,6 +488,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alanashton.Medication-Sidekick.Medication-SidekickTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
