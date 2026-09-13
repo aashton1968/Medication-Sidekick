@@ -203,22 +203,13 @@ struct WeeklyCompletionChartView: View {
     private var summaryChart: some View {
         let summarySliceStyle = pieSliceStyle(for: slices, defaultInset: 1.5, defaultCornerRadius: 4)
         return Chart(slices) { slice in
-            if summarySliceStyle.cornerRadius > 0 {
-                SectorMark(
-                    angle: .value("Count", slice.count),
-                    innerRadius: .ratio(0.62),
-                    angularInset: summarySliceStyle.angularInset
-                )
-                .foregroundStyle(slice.color)
-                .clipShape(.rect(cornerRadius: summarySliceStyle.cornerRadius))
-            } else {
-                SectorMark(
-                    angle: .value("Count", slice.count),
-                    innerRadius: .ratio(0.62),
-                    angularInset: summarySliceStyle.angularInset
-                )
-                .foregroundStyle(slice.color)
-            }
+            SectorMark(
+                angle: .value("Count", slice.count),
+                innerRadius: .ratio(0.62),
+                angularInset: summarySliceStyle.angularInset
+            )
+            .foregroundStyle(slice.color)
+            .cornerRadius(summarySliceStyle.cornerRadius)
         }
         .chartBackground { _ in
             VStack(spacing: 2) {
@@ -261,22 +252,13 @@ struct WeeklyCompletionChartView: View {
                     .frame(height: 72)
             } else {
                 Chart(daySlices) { slice in
-                    if daySliceStyle.cornerRadius > 0 {
-                        SectorMark(
-                            angle: .value("Count", slice.count),
-                            innerRadius: .ratio(0.62),
-                            angularInset: daySliceStyle.angularInset
-                        )
-                        .foregroundStyle(slice.color)
-                        .clipShape(.rect(cornerRadius: daySliceStyle.cornerRadius))
-                    } else {
-                        SectorMark(
-                            angle: .value("Count", slice.count),
-                            innerRadius: .ratio(0.62),
-                            angularInset: daySliceStyle.angularInset
-                        )
-                        .foregroundStyle(slice.color)
-                    }
+                    SectorMark(
+                        angle: .value("Count", slice.count),
+                        innerRadius: .ratio(0.62),
+                        angularInset: daySliceStyle.angularInset
+                    )
+                    .foregroundStyle(slice.color)
+                    .cornerRadius(daySliceStyle.cornerRadius)
                 }
                 .chartBackground { _ in
                     Text("\(snapshot.summary.completionPercent)%")
