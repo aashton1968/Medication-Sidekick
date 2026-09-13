@@ -1,0 +1,44 @@
+{
+  "identifier" : "A57E11D4-E0D2-4E28-BFD1-5CBEDB1C25A0",
+  "nonRenewableSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "1234567890",
+    "_storefront" : "USA,12,USA",
+    "_storeKitVersion" : "2"
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "20000001",
+      "localizations" : [],
+      "name" : "Pro Access",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "10000001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Full Pro access for Medication SideKick",
+              "displayName" : "Pro Access Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "alanashton.com.medicationsidekick.pro.access.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Annual",
+          "subscriptionGroupID" : "20000001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}
