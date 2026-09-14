@@ -121,6 +121,15 @@ struct MedicationDetailView: View {
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.red)
                         }
+
+                        if !medication.followsDeviceTimeZone {
+                            Label(
+                                "Fixed to \(medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier), won't adjust for travel",
+                                systemImage: "airplane"
+                            )
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(themeManager.selectedTheme.textSecondary)
+                        }
                     }
 
                     Spacer()

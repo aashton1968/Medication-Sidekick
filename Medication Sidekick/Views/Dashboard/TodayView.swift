@@ -484,10 +484,9 @@ struct TodayView: View {
                            Image(systemName: "chevron.left")
                                .font(.headline.weight(.semibold))
                                .frame(width: 34, height: 34)
-                               .background(themeManager.selectedTheme.surfaceBase)
-                               .clipShape(Circle())
                        }
-                       .buttonStyle(.plain)
+                       .buttonStyle(.glass)
+                       .buttonBorderShape(.circle)
                        .disabled(!canMoveBackward)
                        .opacity(canMoveBackward ? 1 : 0.35)
 
@@ -506,10 +505,9 @@ struct TodayView: View {
                                selectedDate = startOfToday
                            }
                            .font(.caption.weight(.semibold))
-                           .padding(.horizontal, 10)
-                           .padding(.vertical, 6)
-                           .background(themeManager.selectedTheme.surfaceBase)
-                           .clipShape(Capsule())
+                           .buttonStyle(.glass)
+                           .buttonBorderShape(.capsule)
+                           .controlSize(.small)
                        }
 
                        Button {
@@ -518,10 +516,9 @@ struct TodayView: View {
                            Image(systemName: "chevron.right")
                                .font(.headline.weight(.semibold))
                                .frame(width: 34, height: 34)
-                               .background(themeManager.selectedTheme.surfaceBase)
-                               .clipShape(Circle())
                        }
-                       .buttonStyle(.plain)
+                       .buttonStyle(.glass)
+                       .buttonBorderShape(.circle)
                        .disabled(!canMoveForward)
                        .opacity(canMoveForward ? 1 : 0.35)
                    }
@@ -733,6 +730,32 @@ struct DoseRow: View {
                 }
             }
         }
+        // Swipe right to mark taken (or undo, if already taken) — the standard iOS
+        // check-in gesture, on top of the same toggle() the row's tap already uses.
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                toggle()
+            } label: {
+                if dose.status == .taken {
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                } else {
+                    Label("Mark Taken", systemImage: "checkmark")
+                }
+            }
+            .tint(dose.status == .taken ? .gray : .green)
+        }
+        // Swipe left to skip (or undo a skip). Mirrors the context menu above: skipping
+        // is only offered from .scheduled/.skipped, matching markAsSkipped()'s own guard.
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if dose.status == .scheduled || dose.status == .skipped {
+                Button {
+                    skip()
+                } label: {
+                    Label(dose.status == .skipped ? "Undo Skip" : "Skip", systemImage: dose.status == .skipped ? "arrow.uturn.backward" : "minus.circle")
+                }
+                .tint(.gray)
+            }
+        }
     }
 
     private func toggle() {
@@ -777,4 +800,43 @@ struct DoseRow: View {
             Self.logger.error("Failed toggling skip: \(error.localizedDescription, privacy: .public)")
         }
     }
+}
+
+#Preview("Dose Row") {
+    let themeManager = ThemeManager()
+    let container = PreviewData.container
+    let context = container.mainContext
+
+    let medication = Medication(
+        name: "Metformin",
+        dosage: "500 mg",
+        meals: [.breakfast, .lunch, .dinner, .supper],
+        currentStock: 40,
+        stockUnit: .tablets
+    )
+    context.insert(medication)
+
+    // One row per status, so all four swipe/tap states are visible at a glance —
+    // including "scheduled but overdue," which drives the .missed icon/color.
+    let scheduledDose = MedicationDose(medication: medication, mealTime: .breakfast, scheduledDate: Date())
+    let takenDose = MedicationDose(medication: medication, mealTime: .lunch, scheduledDate: Date(), status: .taken)
+    let skippedDose = MedicationDose(medication: medication, mealTime: .dinner, scheduledDate: Date(), status: .skipped)
+    let missedDose = MedicationDose(
+        medication: medication,
+        mealTime: .supper,
+        scheduledDate: Date().addingTimeInterval(-6 * 3600),
+        status: .missed
+    )
+
+    [scheduledDose, takenDose, skippedDose, missedDose].forEach { context.insert($0) }
+    try? context.save()
+
+    return List {
+        DoseRow(dose: scheduledDose, mealTimeSettings: [])
+        DoseRow(dose: takenDose, mealTimeSettings: [])
+        DoseRow(dose: skippedDose, mealTimeSettings: [])
+        DoseRow(dose: missedDose, mealTimeSettings: [])
+    }
+    .modelContainer(container)
+    .environment(themeManager)
 }

@@ -68,6 +68,60 @@ struct MedicationDoseGenerator {
         }
     }
 
+    /// Corrects the clock time of not-yet-occurred doses whose stored time-of-day no longer
+    /// matches their medication's meal setting under the medication's current scheduling
+    /// calendar. This is what re-syncs schedules after the device's timezone changes:
+    ///
+    /// - `followsDeviceTimeZone` medications recompute against `Calendar.current`, so a dose
+    ///   generated as "8am" while at home is corrected to "8am" in the new local timezone.
+    /// - Medications anchored to a fixed `homeTimeZoneIdentifier` recompute against that same
+    ///   fixed zone every time, so this pass is a no-op for them regardless of device travel.
+    ///
+    /// Only `scheduled` doses are touched — taken/skipped/missed doses are historical records
+    /// and are left as-is. Does NOT save — the caller is responsible for saving.
+    /// - Returns: `true` if any dose's `scheduledDate` was corrected.
+    @discardableResult
+    static func retimeStaleDoses(modelContext: ModelContext) throws -> Bool {
+        let deviceCalendar = Calendar.current
+        let allDoses = try modelContext.fetch(FetchDescriptor<MedicationDose>())
+        let settings = try modelContext.fetch(FetchDescriptor<MealTimeSetting>())
+        let settingsByKey = Dictionary(settings.map { ($0.key, $0) }, uniquingKeysWith: { _, latest in latest })
+
+        var didChange = false
+
+        for dose in allDoses {
+            guard dose.status == .scheduled, let medication = dose.medication else { continue }
+
+            let time: DateComponents
+            if let setting = settingsByKey[dose.mealTimeRaw] {
+                time = setting.defaultDateComponents
+            } else if let enumCase = MealTime(rawValue: dose.mealTimeRaw) {
+                time = enumCase.defaultDateComponents
+            } else {
+                continue
+            }
+
+            // Keep the calendar day the dose currently represents (read under the device's
+            // live calendar), then rebuild the time-of-day using the medication's scheduling
+            // calendar. Doses right around local midnight can shift a day if the timezone
+            // offset change is large enough to cross the day boundary; that's an accepted
+            // edge case for a self-healing correction pass.
+            var components = deviceCalendar.dateComponents([.year, .month, .day], from: dose.scheduledDate)
+            components.hour = time.hour
+            components.minute = time.minute
+            components.second = 0
+
+            guard let correctedDate = medication.schedulingCalendar.date(from: components) else { continue }
+            guard abs(correctedDate.timeIntervalSince(dose.scheduledDate)) >= 60 else { continue }
+
+            dose.scheduledDate = correctedDate
+            dose.updatedAt = Date()
+            didChange = true
+        }
+
+        return didChange
+    }
+
     /// Returns true if a dose should be generated for `day` based on the medication's frequency.
     private static func isDoseScheduled(
         for medication: Medication,
@@ -112,6 +166,10 @@ struct MedicationDoseGenerator {
         let settings = try modelContext.fetch(FetchDescriptor<MealTimeSetting>())
         let settingsByKey = Dictionary(settings.map { ($0.key, $0) }, uniquingKeysWith: { _, latest in latest })
         let uniqueMealKeys = Array(Set(medication.mealsRaw))
+        // Day iteration always uses the device's current calendar (so "the next 7 days"
+        // means 7 local days), but the final time-of-day is resolved with the medication's
+        // own scheduling calendar so timezone-anchored medications keep their fixed clock time.
+        let schedulingCalendar = medication.schedulingCalendar
 
         for dayOffset in 0..<daysAhead {
 
@@ -144,7 +202,7 @@ struct MedicationDoseGenerator {
                 components.minute = time.minute
                 components.second = 0
 
-                guard let scheduledDate = calendar.date(from: components) else {
+                guard let scheduledDate = schedulingCalendar.date(from: components) else {
                     continue
                 }
 

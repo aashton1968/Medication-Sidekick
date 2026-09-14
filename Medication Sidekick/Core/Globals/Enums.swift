@@ -163,7 +163,7 @@ enum StockUnit: String, Codable, CaseIterable {
 
 // MARK: - Stock Level
 
-enum StockLevel {
+nonisolated enum StockLevel {
     case good       // >= 14 days supply
     case warning    // 7–13 days supply
     case critical   // 1–6 days supply
@@ -184,6 +184,17 @@ enum StockLevel {
         case .warning:  return "circle.fill"
         case .critical: return "exclamationmark.circle.fill"
         case .empty:    return "xmark.circle.fill"
+        }
+    }
+
+    /// Ordinal urgency used by `MedicationRefillReminderService` to decide whether a
+    /// refill reminder should (re-)fire. `0` means "no reminder needed".
+    var severity: Int {
+        switch self {
+        case .good:     return 0
+        case .warning:  return 1
+        case .critical: return 2
+        case .empty:    return 3
         }
     }
 }

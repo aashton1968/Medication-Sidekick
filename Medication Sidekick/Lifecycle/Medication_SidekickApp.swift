@@ -13,16 +13,25 @@ import UserNotifications
 final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = AppNotificationDelegate()
     private static let medicationRequestPrefix = "meddose."
+    private static let refillRequestPrefix = "medrefill."
     // nonisolated(unsafe) so the delegate callback can write it synchronously
     // before completionHandler() fires, without a Task hop.
     nonisolated(unsafe) private(set) static var hasPendingMedicationReminderOpen = false
+    nonisolated(unsafe) private(set) static var hasPendingRefillReminderOpen = false
 
     private override init() {}
-    
+
     @MainActor
     static func consumePendingMedicationReminderOpen() -> Bool {
         let hadPendingOpen = hasPendingMedicationReminderOpen
         hasPendingMedicationReminderOpen = false
+        return hadPendingOpen
+    }
+
+    @MainActor
+    static func consumePendingRefillReminderOpen() -> Bool {
+        let hadPendingOpen = hasPendingRefillReminderOpen
+        hasPendingRefillReminderOpen = false
         return hadPendingOpen
     }
 
@@ -33,18 +42,25 @@ final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
     ) {
         completionHandler([.banner, .list, .sound])
     }
-    
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        guard response.notification.request.identifier.hasPrefix(Self.medicationRequestPrefix) else {
+        // Set flags synchronously before completionHandler() so the navigation
+        // intent is committed even if the app is backgrounded immediately after.
+        let identifier = response.notification.request.identifier
+        if identifier.hasPrefix(Self.refillRequestPrefix) {
+            Self.hasPendingRefillReminderOpen = true
+            NotificationCenter.default.post(name: .medicationRefillReminderOpened, object: nil)
             completionHandler()
             return
         }
-        // Set flag synchronously before completionHandler() so the navigation
-        // intent is committed even if the app is backgrounded immediately after.
+        guard identifier.hasPrefix(Self.medicationRequestPrefix) else {
+            completionHandler()
+            return
+        }
         Self.hasPendingMedicationReminderOpen = true
         NotificationCenter.default.post(name: .medicationReminderOpened, object: nil)
         completionHandler()
@@ -84,20 +100,23 @@ struct Medication_SidekickApp: App {
     init() {
         UNUserNotificationCenter.current().delegate = AppNotificationDelegate.shared
         let chromeTheme = Main()
-        
+
+        // .configureWithDefaultBackground() keeps the system's Liquid Glass material
+        // (unlike .configureWithOpaqueBackground(), which paints flat and kills the glass
+        // effect entirely); backgroundColor tints that glass teal instead of replacing it,
+        // and — unlike the SwiftUI .toolbarBackground(_:for:) modifier alone — applies at
+        // every scroll position instead of only once content scrolls underneath the bar.
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
+        appearance.configureWithDefaultBackground()
         appearance.backgroundColor = UIColor(chromeTheme.accentPrimary)
         let headerColor = UIColor(chromeTheme.textOnAccent)
         appearance.titleTextAttributes = [.foregroundColor: headerColor]
         appearance.largeTitleTextAttributes = [.foregroundColor: headerColor]
-        
+
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
         UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().tintColor = UIColor(chromeTheme.textOnAccent)
-        
-        
     }
     
     
@@ -119,18 +138,6 @@ struct Medication_SidekickApp: App {
                     .environment(navigationRouter)
                     .environment(subscriptionService)
                     .environment(themeManager)
-                    .toolbarBackground(
-                        LinearGradient(
-                            colors: [
-                                themeManager.selectedTheme.accentPrimary,
-                                themeManager.selectedTheme.accentSecondary
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        for: .navigationBar
-                    )
-                    .toolbarBackground(.visible, for: .navigationBar)
                     .modelContainer(container)
             } else {
                 DatabaseUnavailableView()
@@ -140,6 +147,11 @@ struct Medication_SidekickApp: App {
             guard newPhase == .active else { return }
             Task {
                 await subscriptionService.refreshSubscriptionStatus(allowAutomaticRestore: true)
+            }
+            if let mainContext = sharedModelContainer?.mainContext {
+                Task {
+                    await AppStartupSequence.retimeDosesForTimeZoneChangeIfNeeded(modelContext: mainContext)
+                }
             }
         }
     }

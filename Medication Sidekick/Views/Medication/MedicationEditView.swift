@@ -31,6 +31,7 @@ struct MedicationEditView: View {
     @State private var doseQuantity: Int = 1
     @State private var stockUnit: StockUnit = .tablets
     @State private var estimatedDailyDoses: Int = 1
+    @State private var followsDeviceTimeZone: Bool = true
 
     // MARK: - Validation
     private var isValid: Bool {
@@ -50,7 +51,8 @@ struct MedicationEditView: View {
         currentStock != medication.currentStock ||
         doseQuantity != medication.doseQuantity ||
         stockUnit != medication.stockUnit ||
-        estimatedDailyDoses != medication.estimatedDailyDoses
+        estimatedDailyDoses != medication.estimatedDailyDoses ||
+        followsDeviceTimeZone != medication.followsDeviceTimeZone
     }
 
     var body: some View {
@@ -139,6 +141,14 @@ struct MedicationEditView: View {
                 Section {
                     Toggle("Active", isOn: $isActive)
                 }
+
+                Section {
+                    Toggle("Adjust for Travel", isOn: $followsDeviceTimeZone)
+                } footer: {
+                    Text(followsDeviceTimeZone
+                        ? "Dose times follow your device's current timezone, so this medication stays on the same local mealtime wherever you are."
+                        : "Dose times stay fixed to \(medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier) and won't shift when you travel — use this for medications where the interval between doses matters more than the local clock hour.")
+                }
             }
             .navigationTitle("Edit Medication")
             .navigationBarTitleDisplayMode(.inline)
@@ -173,6 +183,7 @@ struct MedicationEditView: View {
             doseQuantity = medication.doseQuantity
             stockUnit = medication.stockUnit
             estimatedDailyDoses = medication.estimatedDailyDoses
+            followsDeviceTimeZone = medication.followsDeviceTimeZone
         }
     }
 
@@ -191,10 +202,19 @@ struct MedicationEditView: View {
         medication.doseQuantity = doseQuantity
         medication.stockUnit = stockUnit
         medication.estimatedDailyDoses = estimatedDailyDoses
+
+        let travelModeChanged = followsDeviceTimeZone != medication.followsDeviceTimeZone
+        if followsDeviceTimeZone == false && medication.followsDeviceTimeZone == true {
+            medication.homeTimeZoneIdentifier = TimeZone.current.identifier
+        }
+        medication.followsDeviceTimeZone = followsDeviceTimeZone
         medication.updatedAt = Date()
 
         do {
             try MedicationDoseGenerator.refreshDoses(for: medication, modelContext: modelContext)
+            if travelModeChanged {
+                try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
+            }
         } catch {
             ToastManager.shared.showError("Schedule saved, but doses could not refresh. Pull to refresh Today.")
         }

@@ -18,6 +18,7 @@ struct Constants {
 extension Notification.Name {
     static let medicationDidChange = Notification.Name("medicationDidChange")
     static let medicationReminderOpened = Notification.Name("medicationReminderOpened")
+    static let medicationRefillReminderOpened = Notification.Name("medicationRefillReminderOpened")
 }
 
 enum AppStorageKeys: String {
@@ -25,6 +26,7 @@ enum AppStorageKeys: String {
     case medicationReminderLeadTimeMinutes = "medicationReminderLeadTimeMinutes"
     case notificationPrivacyEnabled = "notificationPrivacyEnabled"
     case hasShownInitialSubscriptionPrompt = "hasShownInitialSubscriptionPrompt"
+    case refillRemindersEnabled = "refillRemindersEnabled"
 }
 
 @MainActor

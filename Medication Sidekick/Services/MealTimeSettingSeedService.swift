@@ -11,7 +11,7 @@ import SwiftData
 
 final class MealTimeSettingSeedService {
     static let shared = MealTimeSettingSeedService()
-    nonisolated(unsafe) private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "MealTimeSeed")
+    nonisolated private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "MealTimeSeed")
     private init() {}
 
     nonisolated func seedIfNeeded(container: ModelContainer) async {

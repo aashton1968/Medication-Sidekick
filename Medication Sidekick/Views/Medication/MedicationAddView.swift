@@ -28,6 +28,7 @@ struct MedicationAddView: View {
     @State private var currentStock: Int = 0
     @State private var doseQuantity: Int = 1
     @State private var stockUnit: StockUnit = .tablets
+    @State private var followsDeviceTimeZone: Bool = true
 
     // MARK: - Validation
     private var isValid: Bool {
@@ -122,6 +123,14 @@ struct MedicationAddView: View {
                         }
                     }
                 }
+
+                Section {
+                    Toggle("Adjust for Travel", isOn: $followsDeviceTimeZone)
+                } footer: {
+                    Text(followsDeviceTimeZone
+                        ? "Dose times follow your device's current timezone, so this medication stays on the same local mealtime wherever you are."
+                        : "Dose times stay fixed to \(TimeZone.current.identifier) and won't shift when you travel — use this for medications where the interval between doses matters more than the local clock hour.")
+                }
             }
             .navigationTitle("New Medication")
             .toolbar {
@@ -162,7 +171,9 @@ struct MedicationAddView: View {
             currentStock: currentStock,
             doseQuantity: doseQuantity,
             stockUnit: stockUnit,
-            estimatedDailyDoses: estimatedDailyDoses
+            estimatedDailyDoses: estimatedDailyDoses,
+            followsDeviceTimeZone: followsDeviceTimeZone,
+            homeTimeZoneIdentifier: followsDeviceTimeZone ? nil : TimeZone.current.identifier
         )
         medication.mealsRaw = orderedKeys
 

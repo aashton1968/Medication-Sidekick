@@ -209,7 +209,7 @@ struct WeeklyCompletionChartView: View {
                 angularInset: summarySliceStyle.angularInset
             )
             .foregroundStyle(slice.color)
-            .clipShape(.rect(cornerRadius: summarySliceStyle.cornerRadius))
+            .cornerRadius(summarySliceStyle.cornerRadius)
         }
         .chartBackground { _ in
             VStack(spacing: 2) {
@@ -258,7 +258,7 @@ struct WeeklyCompletionChartView: View {
                         angularInset: daySliceStyle.angularInset
                     )
                     .foregroundStyle(slice.color)
-                    .clipShape(.rect(cornerRadius: daySliceStyle.cornerRadius))
+                    .cornerRadius(daySliceStyle.cornerRadius)
                 }
                 .chartBackground { _ in
                     Text("\(snapshot.summary.completionPercent)%")

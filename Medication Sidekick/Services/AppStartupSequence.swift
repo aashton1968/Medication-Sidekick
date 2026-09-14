@@ -43,7 +43,26 @@ enum AppStartupSequence {
             logger.error("Initial dose generation failed: \(error.localizedDescription, privacy: .public)")
         }
 
+        await retimeDosesForTimeZoneChangeIfNeeded(modelContext: mainContext)
+
         scheduleDelayedReconcile(container: container)
+    }
+
+    /// Corrects any scheduled doses whose stored clock time no longer matches their meal
+    /// setting — the situation that arises after the device's timezone changes (e.g. arriving
+    /// in a new country) while doses for the next few days were already generated in the old
+    /// timezone. Safe to call repeatedly; it's a no-op when nothing is stale.
+    @MainActor
+    static func retimeDosesForTimeZoneChangeIfNeeded(modelContext: ModelContext) async {
+        do {
+            let didChange = try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
+            guard didChange else { return }
+            try modelContext.save()
+            NotificationCenter.default.post(name: .medicationDidChange, object: nil)
+            ToastManager.shared.showGeneral("Medication times updated for \(TimeZone.current.identifier)")
+        } catch {
+            logger.error("Failed to retime doses for timezone change: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private static func scheduleDelayedReconcile(container: ModelContainer) {

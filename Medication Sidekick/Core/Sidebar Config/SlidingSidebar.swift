@@ -59,17 +59,11 @@ struct SlidingSidebar<Content: View, Sidebar: View>: View {
                     .buttonStyle(.plain)
                 }
 
-                // Sidebar panel with Liquid Glass on iOS 26+
+                // Sidebar panel — iOS 26 is the deployment floor, so this is always Liquid Glass.
                 ZStack {
-                    if #available(iOS 26.0, *) {
-                        Rectangle()
-                            .glassEffect(.regular, in: .rect)
-                            .ignoresSafeArea()
-                    } else {
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
-                            .ignoresSafeArea()
-                    }
+                    Rectangle()
+                        .glassEffect(.regular, in: .rect)
+                        .ignoresSafeArea()
                     sidebar
                 }
                 .frame(width: configuration.width)

@@ -14,7 +14,7 @@ import os.log
 // pool instead of the main actor, despite SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor.
 final class MedicationSeedService {
     static let shared = MedicationSeedService()
-    nonisolated(unsafe) private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "SeedService")
+    nonisolated private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick", category: "SeedService")
     private init() {}
 
     // MARK: - Public API

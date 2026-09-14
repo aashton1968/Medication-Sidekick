@@ -25,6 +25,7 @@ struct MedicationEditScheduleSheet: View {
     @State private var selectedWeekdays: Set<Int> = []
     @State private var isActive: Bool = true
     @State private var estimatedDailyDoses: Int = 1
+    @State private var followsDeviceTimeZone: Bool = true
 
     private static let weekdayNames: [(Int, String)] = [
         (2, "Monday"), (3, "Tuesday"), (4, "Wednesday"),
@@ -42,7 +43,8 @@ struct MedicationEditScheduleSheet: View {
         selectedMealKeys != Set(medication.mealsRaw) ||
         selectedWeekdays != medication.scheduledWeekdays ||
         isActive != medication.isActive ||
-        estimatedDailyDoses != medication.estimatedDailyDoses
+        estimatedDailyDoses != medication.estimatedDailyDoses ||
+        followsDeviceTimeZone != medication.followsDeviceTimeZone
     }
 
     var body: some View {
@@ -124,6 +126,14 @@ struct MedicationEditScheduleSheet: View {
                 Section {
                     Toggle("Active", isOn: $isActive)
                 }
+
+                Section {
+                    Toggle("Adjust for Travel", isOn: $followsDeviceTimeZone)
+                } footer: {
+                    Text(followsDeviceTimeZone
+                        ? "Dose times follow your device's current timezone, so this medication stays on the same local mealtime wherever you are."
+                        : "Dose times stay fixed to \(medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier) and won't shift when you travel — use this for medications where the interval between doses matters more than the local clock hour.")
+                }
             }
             .navigationTitle("Edit Schedule")
             .navigationBarTitleDisplayMode(.inline)
@@ -143,6 +153,7 @@ struct MedicationEditScheduleSheet: View {
             selectedWeekdays = medication.scheduledWeekdays
             isActive = medication.isActive
             estimatedDailyDoses = medication.estimatedDailyDoses
+            followsDeviceTimeZone = medication.followsDeviceTimeZone
         }
     }
 
@@ -154,10 +165,22 @@ struct MedicationEditScheduleSheet: View {
         medication.scheduledWeekdays = frequency == .specificDays ? selectedWeekdays : []
         medication.isActive = isActive
         medication.estimatedDailyDoses = estimatedDailyDoses
+
+        let travelModeChanged = followsDeviceTimeZone != medication.followsDeviceTimeZone
+        if followsDeviceTimeZone == false && medication.followsDeviceTimeZone == true {
+            // Capture "home" as wherever the user is right now, the moment travel-adjustment is turned off.
+            medication.homeTimeZoneIdentifier = TimeZone.current.identifier
+        }
+        medication.followsDeviceTimeZone = followsDeviceTimeZone
         medication.updatedAt = Date()
 
         do {
             try MedicationDoseGenerator.refreshDoses(for: medication, modelContext: modelContext)
+            // Turning travel-adjustment on/off doesn't add or remove any dose rows, so the gap-filling
+            // refresh above won't retime already-existing future doses — force that explicitly.
+            if travelModeChanged {
+                try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
+            }
         } catch {
             ToastManager.shared.showError("Schedule saved, but doses could not refresh. Pull to refresh Today.")
         }
