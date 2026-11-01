@@ -17,9 +17,12 @@ struct SettingsView: View {
     @AppStorage(AppStorageKeys.medicationNotificationsEnabled.rawValue) private var notificationsEnabled: Bool = true
     @AppStorage(AppStorageKeys.medicationReminderLeadTimeMinutes.rawValue) private var reminderLeadTimeMinutes: Int = 0
     @AppStorage(AppStorageKeys.notificationPrivacyEnabled.rawValue) private var notificationPrivacyEnabled: Bool = false
+    @AppStorage(AppStorageKeys.refillRemindersEnabled.rawValue) private var refillRemindersEnabled: Bool = true
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
     @State private var testNotificationMessage: String?
     @State private var testNotificationIsError = false
+    @State private var testRefillNotificationMessage: String?
+    @State private var testRefillNotificationIsError = false
     @State private var restoreMessage: String?
     @State private var restoreIsError = false
     @State private var isRestoringPurchases = false
@@ -30,6 +33,7 @@ struct SettingsView: View {
     @State private var isRunningCloudCleanup = false
 
     private let notificationService = MedicationNotificationService()
+    private let refillReminderService = MedicationRefillReminderService()
     private let leadTimeOptions = [0, 5, 10, 15, 30, 60]
 
     var body: some View {
@@ -87,6 +91,51 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(testNotificationIsError ? .red : themeManager.selectedTheme.textSecondary)
                 }
+            }
+
+            Section {
+                Toggle("Refill reminders", isOn: $refillRemindersEnabled)
+
+                Text("Get notified when a medication's stock is running low, very low, or out.")
+                    .font(.caption)
+                    .foregroundStyle(themeManager.selectedTheme.textSecondary)
+
+                if isSettingsActionRequired {
+                    Button("Open Settings") {
+                        openSystemSettings()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+
+                Button {
+                    Task {
+                        await scheduleTestRefillNotification()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "pills.circle")
+                            .foregroundStyle(.blue)
+                        Text("Send Test Refill Notification")
+                        Spacer()
+                        Text("Test")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.12), in: Capsule())
+                    }
+                }
+                .disabled(!refillRemindersEnabled)
+
+                if let testRefillNotificationMessage {
+                    Text(testRefillNotificationMessage)
+                        .font(.caption)
+                        .foregroundStyle(testRefillNotificationIsError ? .red : themeManager.selectedTheme.textSecondary)
+                }
+            } header: {
+                Text("Refill Reminders")
+            } footer: {
+                Text("Uses the same notification permission and the privacy setting above.")
             }
 
             Section("Subscription") {
@@ -196,6 +245,15 @@ struct SettingsView: View {
             }
             NotificationCenter.default.post(name: .medicationDidChange, object: nil)
         }
+        .onChange(of: refillRemindersEnabled) { _, isEnabled in
+            Task {
+                if isEnabled {
+                    await refillReminderService.requestAuthorizationIfNeeded()
+                    await refreshNotificationStatus()
+                }
+                NotificationCenter.default.post(name: .medicationDidChange, object: nil)
+            }
+        }
         .background(themeManager.selectedTheme.bgBase)
         .manageSubscriptionsSheet(isPresented: $showingManageSubscriptions)
         .refundRequestSheet(
@@ -260,6 +318,20 @@ struct SettingsView: View {
             await refreshNotificationStatus()
             testNotificationIsError = true
             testNotificationMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func scheduleTestRefillNotification() async {
+        do {
+            try await refillReminderService.sendTestNotification()
+            await refreshNotificationStatus()
+            testRefillNotificationIsError = false
+            testRefillNotificationMessage = "Test refill notification scheduled. You should receive it in about 5 seconds."
+        } catch {
+            await refreshNotificationStatus()
+            testRefillNotificationIsError = true
+            testRefillNotificationMessage = error.localizedDescription
         }
     }
 

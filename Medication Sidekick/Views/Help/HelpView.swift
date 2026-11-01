@@ -56,11 +56,6 @@ struct HelpView: View {
             }
             .padding()
         }
-        .task {
-            let url = currentPage.markdownURL
-            
-        }
-        
         .navigationBarTitleDisplayMode(.inline)
         
         .toolbar {

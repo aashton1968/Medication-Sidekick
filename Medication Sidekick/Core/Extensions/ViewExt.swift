@@ -27,14 +27,9 @@ extension View {
         self.modifier(ToastModifier())
     }
 
-    /// Applies Liquid Glass on iOS 26+; falls back to a solid colour background on earlier OS versions.
-    @ViewBuilder
-    func liquidGlass(in shape: some Shape = .rect, fallback: Color) -> some View {
-        if #available(iOS 26.0, *) {
-            self.glassEffect(in: shape)
-        } else {
-            self.background(fallback)
-        }
+    /// Applies Liquid Glass. iOS 26 is the deployment floor, so no fallback branch is needed.
+    func liquidGlass(in shape: some Shape = .rect) -> some View {
+        self.glassEffect(in: shape)
     }
 }
 

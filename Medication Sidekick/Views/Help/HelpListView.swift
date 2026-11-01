@@ -39,12 +39,7 @@ struct HelpListView: View {
             .buttonStyle(.plain)
         }
         .listStyle(.plain)
-        
-        .task {
-            if let first = HelpDocumentation.helpPages.first {
-            }
-        }
-        
+
         // Header Toolbar
         .toolbar {
             ToolbarItem(placement: .principal) {

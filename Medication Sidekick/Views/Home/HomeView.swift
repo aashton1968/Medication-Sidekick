@@ -22,6 +22,7 @@ struct HomeView: View {
     @AppStorage(AppStorageKeys.hasShownInitialSubscriptionPrompt.rawValue)
     private var hasShownInitialSubscriptionPrompt: Bool = false
     private let notificationService = MedicationNotificationService()
+    private let refillReminderService = MedicationRefillReminderService()
     @State private var notificationSyncTask: Task<Void, Never>?
     
     let customConfig = SidebarConfiguration(
@@ -134,11 +135,16 @@ struct HomeView: View {
             )
             await generateDosesForActiveMedications()
             await notificationService.requestAuthorizationIfNeeded()
+            await refillReminderService.requestAuthorizationIfNeeded()
             await syncMedicationNotifications()
             
             if AppNotificationDelegate.consumePendingMedicationReminderOpen() {
                 sidebarOpen = false
                 navigationRouter.navigate(.todayView)
+            }
+            if AppNotificationDelegate.consumePendingRefillReminderOpen() {
+                sidebarOpen = false
+                navigationRouter.navigate(.medications)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .medicationDidChange)) { _ in
@@ -150,6 +156,10 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .medicationReminderOpened)) { _ in
             sidebarOpen = false
             navigationRouter.navigate(.todayView)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .medicationRefillReminderOpened)) { _ in
+            sidebarOpen = false
+            navigationRouter.navigate(.medications)
         }
         .onChange(of: subscriptionService.hasLoadedStatus) { _, loaded in
             guard loaded else { return }
@@ -248,6 +258,7 @@ struct HomeView: View {
     @MainActor
     private func syncMedicationNotifications() async {
         await notificationService.syncScheduledDoseNotifications(modelContext: modelContext)
+        await refillReminderService.syncRefillReminders(modelContext: modelContext)
     }
 
     @MainActor
