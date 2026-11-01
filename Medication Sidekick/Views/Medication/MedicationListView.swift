@@ -151,7 +151,10 @@ struct MedicationListView: View {
     }
 
     private func presentShareSheet() {
-        let renderer = ImageRenderer(content: MedicationShareView(medications: sortedMedications))
+        let renderer = ImageRenderer(
+            content: MedicationShareView(medications: sortedMedications)
+                .environment(themeManager)
+        )
         renderer.scale = 3
         guard let image = renderer.uiImage else { return }
 
