@@ -119,13 +119,10 @@ struct MedicationEditView: View {
                     Toggle("Active", isOn: $isActive)
                 }
 
-                Section {
-                    Toggle("Adjust for Travel", isOn: $followsDeviceTimeZone)
-                } footer: {
-                    Text(followsDeviceTimeZone
-                        ? "Dose times follow your device's current timezone, so this medication stays on the same local mealtime wherever you are."
-                        : "Dose times stay fixed to \(medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier) and won't shift when you travel — use this for medications where the interval between doses matters more than the local clock hour.")
-                }
+                HomeTimeZoneSection(
+                    followsDeviceTimeZone: $followsDeviceTimeZone,
+                    homeTimeZoneIdentifier: medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier
+                )
             }
             .navigationTitle("Edit Medication")
             .navigationBarTitleDisplayMode(.inline)

@@ -276,7 +276,7 @@ struct MedicationRow: View {
                 }
 
                 if !medication.followsDeviceTimeZone {
-                    Label("Fixed schedule", systemImage: "airplane")
+                    Label("Keeps home time zone", systemImage: "airplane")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(themeManager.selectedTheme.textSecondary)
                 }

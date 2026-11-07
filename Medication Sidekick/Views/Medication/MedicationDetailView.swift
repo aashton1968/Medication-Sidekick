@@ -124,7 +124,7 @@ struct MedicationDetailView: View {
 
                         if !medication.followsDeviceTimeZone {
                             Label(
-                                "Fixed to \(medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier), won't adjust for travel",
+                                "Keeps \(medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier) time when you travel",
                                 systemImage: "airplane"
                             )
                             .font(.caption.weight(.medium))
