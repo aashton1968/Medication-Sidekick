@@ -281,6 +281,7 @@ private extension MedicationSeedService {
 
         if keeper.updatedAt < duplicate.updatedAt {
             keeper.mealsRaw = duplicate.mealsRaw
+            keeper.mealTimeOverridesRaw = duplicate.mealTimeOverridesRaw
             keeper.frequencyRaw = duplicate.frequencyRaw
         }
 

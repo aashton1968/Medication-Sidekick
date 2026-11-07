@@ -22,19 +22,19 @@ struct MedicationScheduleTimeline: View {
     @Query(sort: \MealTimeSetting.sortOrder)
     private var mealTimeSettings: [MealTimeSetting]
 
-    /// One time-of-day slot (a meal) and the medications taken in it.
+    /// One time of day and the medications taken then. Grouped by the actual reminder time,
+    /// so a medication with its own time for a meal sits at that time, not the meal's.
     private struct Slot: Identifiable {
-        let key: String
-        let name: String
-        let time: DateComponents
+        let minutes: Int
+        let mealNames: [String]
         let medications: [Medication]
 
-        var id: String { key }
-
-        var minutesIntoDay: Int { (time.hour ?? 0) * 60 + (time.minute ?? 0) }
+        var id: Int { minutes }
 
         var timeText: String {
-            Calendar.current.date(from: time)?.formatted(date: .omitted, time: .shortened) ?? ""
+            Calendar.current
+                .date(from: DateComponents(hour: minutes / 60, minute: minutes % 60))?
+                .formatted(date: .omitted, time: .shortened) ?? ""
         }
     }
 
@@ -42,26 +42,24 @@ struct MedicationScheduleTimeline: View {
         let active = medications.filter { $0.isActive && !$0.mealsRaw.isEmpty }
         let settingsByKey = Dictionary(mealTimeSettings.map { ($0.key, $0) }, uniquingKeysWith: { _, latest in latest })
 
-        // Every meal key in use, including keys with no MealTimeSetting (falls back to the
-        // MealTime defaults), so a medication can never silently drop off this screen.
-        let keys = Set(active.flatMap(\.mealsRaw))
+        var buckets: [Int: (names: [String], meds: [Medication])] = [:]
+        for medication in active {
+            for key in Set(medication.mealsRaw) {
+                // Falls back to the MealTime defaults, so a medication can never silently drop off this screen.
+                guard let time = medication.resolvedTime(for: key, settingsByKey: settingsByKey) else { continue }
+                let name = settingsByKey[key]?.name ?? MealTime(rawValue: key)?.displayName ?? key
+                let minutes = (time.hour ?? 0) * 60 + (time.minute ?? 0)
 
-        return keys.compactMap { key -> Slot? in
-            let name: String
-            let time: DateComponents
-            if let setting = settingsByKey[key] {
-                name = setting.name
-                time = setting.defaultDateComponents
-            } else if let meal = MealTime(rawValue: key) {
-                name = meal.displayName
-                time = meal.defaultDateComponents
-            } else {
-                return nil
+                var bucket = buckets[minutes] ?? (names: [], meds: [])
+                if !bucket.names.contains(name) { bucket.names.append(name) }
+                if !bucket.meds.contains(where: { $0.id == medication.id }) { bucket.meds.append(medication) }
+                buckets[minutes] = bucket
             }
-            let meds = active.filter { $0.mealsRaw.contains(key) }
-            return Slot(key: key, name: name, time: time, medications: meds)
         }
-        .sorted { $0.minutesIntoDay < $1.minutesIntoDay }
+
+        return buckets
+            .map { Slot(minutes: $0.key, mealNames: $0.value.names, medications: $0.value.meds.sorted { $0.name < $1.name }) }
+            .sorted { $0.minutes < $1.minutes }
     }
 
     var body: some View {
@@ -86,7 +84,7 @@ struct MedicationScheduleTimeline: View {
                             .buttonStyle(.plain)
                         }
                     } header: {
-                        Text("\(slot.timeText) · \(slot.name)")
+                        Text("\(slot.timeText) · \(slot.mealNames.joined(separator: ", "))")
                     }
                 }
             }

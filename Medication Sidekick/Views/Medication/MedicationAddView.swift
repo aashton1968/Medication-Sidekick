@@ -22,6 +22,7 @@ struct MedicationAddView: View {
     @State private var dosage: String = ""
     @State private var instructions: String = ""
     @State private var selectedMealKeys: Set<String> = []
+    @State private var timeOverrides: [String: DateComponents] = [:]
     @State private var medicationType: MedicationType = .tablet
     @State private var frequency: MedicationFrequency = .daily
     @State private var estimatedDailyDoses: Int = 1
@@ -69,40 +70,11 @@ struct MedicationAddView: View {
                 }
 
                 if frequency != .asNeeded {
-                    Section("When to Take") {
-                        Text("Select meals to take with")
-                            .font(.footnote)
-                            .foregroundStyle(themeManager.selectedTheme.textSecondary)
-
-                        ForEach(mealTimeSettings) { setting in
-                            Button {
-                                toggleMeal(setting.key)
-                            } label: {
-                                HStack {
-                                    Image(systemName: setting.symbolName)
-                                        .frame(width: 24)
-                                        .foregroundStyle(.tint)
-
-                                    Text(setting.name)
-                                        .foregroundStyle(.primary)
-
-                                    Spacer()
-
-                                    Text(setting.displayTime)
-                                        .font(.caption)
-                                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
-
-                                    if selectedMealKeys.contains(setting.key) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.tint)
-                                    } else {
-                                        Image(systemName: "circle")
-                                            .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    MealReminderSection(
+                        mealTimeSettings: mealTimeSettings,
+                        selectedMealKeys: $selectedMealKeys,
+                        timeOverrides: $timeOverrides
+                    )
                 }
 
                 Section("Stock") {
@@ -176,6 +148,7 @@ struct MedicationAddView: View {
             homeTimeZoneIdentifier: followsDeviceTimeZone ? nil : TimeZone.current.identifier
         )
         medication.mealsRaw = orderedKeys
+        medication.timeOverrides = timeOverrides.filter { orderedKeys.contains($0.key) }
 
         modelContext.insert(medication)
 
@@ -193,15 +166,6 @@ struct MedicationAddView: View {
         }
         NotificationCenter.default.post(name: .medicationDidChange, object: nil)
         dismiss()
-    }
-
-    // MARK: - Helpers
-    private func toggleMeal(_ key: String) {
-        if selectedMealKeys.contains(key) {
-            selectedMealKeys.remove(key)
-        } else {
-            selectedMealKeys.insert(key)
-        }
     }
 }
 

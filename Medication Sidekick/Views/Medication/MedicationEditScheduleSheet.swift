@@ -22,6 +22,7 @@ struct MedicationEditScheduleSheet: View {
     // MARK: - Form State
     @State private var frequency: MedicationFrequency = .daily
     @State private var selectedMealKeys: Set<String> = []
+    @State private var timeOverrides: [String: DateComponents] = [:]
     @State private var selectedWeekdays: Set<Int> = []
     @State private var isActive: Bool = true
     @State private var estimatedDailyDoses: Int = 1
@@ -41,6 +42,7 @@ struct MedicationEditScheduleSheet: View {
     private var hasChanges: Bool {
         frequency != medication.frequency ||
         selectedMealKeys != Set(medication.mealsRaw) ||
+        timeOverrides != medication.timeOverrides ||
         selectedWeekdays != medication.scheduledWeekdays ||
         isActive != medication.isActive ||
         estimatedDailyDoses != medication.estimatedDailyDoses ||
@@ -91,36 +93,11 @@ struct MedicationEditScheduleSheet: View {
                 }
 
                 if frequency != .asNeeded {
-                    Section("When to Take") {
-                        ForEach(mealTimeSettings) { setting in
-                            Button {
-                                toggleMeal(setting.key)
-                            } label: {
-                                HStack {
-                                    Image(systemName: setting.symbolName)
-                                        .frame(width: 24)
-                                        .foregroundStyle(.tint)
-
-                                    Text(setting.name)
-                                        .foregroundStyle(.primary)
-
-                                    Spacer()
-
-                                    Text(setting.displayTime)
-                                        .font(.caption)
-                                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
-
-                                    if selectedMealKeys.contains(setting.key) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.tint)
-                                    } else {
-                                        Image(systemName: "circle")
-                                            .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    MealReminderSection(
+                        mealTimeSettings: mealTimeSettings,
+                        selectedMealKeys: $selectedMealKeys,
+                        timeOverrides: $timeOverrides
+                    )
                 }
 
                 Section {
@@ -150,6 +127,7 @@ struct MedicationEditScheduleSheet: View {
         .onAppear {
             frequency = medication.frequency
             selectedMealKeys = Set(medication.mealsRaw)
+            timeOverrides = medication.timeOverrides
             selectedWeekdays = medication.scheduledWeekdays
             isActive = medication.isActive
             estimatedDailyDoses = medication.estimatedDailyDoses
@@ -158,9 +136,11 @@ struct MedicationEditScheduleSheet: View {
     }
 
     private func save() {
+        let timesChanged = timeOverrides != medication.timeOverrides
         medication.mealsRaw = mealTimeSettings
             .filter { selectedMealKeys.contains($0.key) }
             .map(\.key)
+        medication.timeOverrides = timeOverrides.filter { selectedMealKeys.contains($0.key) }
         medication.frequency = frequency
         medication.scheduledWeekdays = frequency == .specificDays ? selectedWeekdays : []
         medication.isActive = isActive
@@ -178,7 +158,7 @@ struct MedicationEditScheduleSheet: View {
             try MedicationDoseGenerator.refreshDoses(for: medication, modelContext: modelContext)
             // Turning travel-adjustment on/off doesn't add or remove any dose rows, so the gap-filling
             // refresh above won't retime already-existing future doses — force that explicitly.
-            if travelModeChanged {
+            if travelModeChanged || timesChanged {
                 try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
             }
         } catch {
@@ -193,14 +173,6 @@ struct MedicationEditScheduleSheet: View {
         }
         NotificationCenter.default.post(name: .medicationDidChange, object: nil)
         dismiss()
-    }
-
-    private func toggleMeal(_ key: String) {
-        if selectedMealKeys.contains(key) {
-            selectedMealKeys.remove(key)
-        } else {
-            selectedMealKeys.insert(key)
-        }
     }
 }
 

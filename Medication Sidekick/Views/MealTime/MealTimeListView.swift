@@ -86,6 +86,9 @@ struct MealTimeListView: View {
         guard let medications = try? modelContext.fetch(FetchDescriptor<Medication>()) else { return }
         for med in medications where med.mealsRaw.contains(key) {
             med.mealsRaw.removeAll { $0 == key }
+            var overrides = med.timeOverrides
+            overrides[key] = nil
+            med.timeOverrides = overrides
         }
     }
 }

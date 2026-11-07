@@ -92,12 +92,7 @@ struct MedicationDoseGenerator {
         for dose in allDoses {
             guard dose.status == .scheduled, let medication = dose.medication else { continue }
 
-            let time: DateComponents
-            if let setting = settingsByKey[dose.mealTimeRaw] {
-                time = setting.defaultDateComponents
-            } else if let enumCase = MealTime(rawValue: dose.mealTimeRaw) {
-                time = enumCase.defaultDateComponents
-            } else {
+            guard let time = medication.resolvedTime(for: dose.mealTimeRaw, settingsByKey: settingsByKey) else {
                 continue
             }
 
@@ -184,12 +179,7 @@ struct MedicationDoseGenerator {
 
             for mealKey in uniqueMealKeys {
 
-                let time: DateComponents
-                if let setting = settingsByKey[mealKey] {
-                    time = setting.defaultDateComponents
-                } else if let enumCase = MealTime(rawValue: mealKey) {
-                    time = enumCase.defaultDateComponents
-                } else {
+                guard let time = medication.resolvedTime(for: mealKey, settingsByKey: settingsByKey) else {
                     continue
                 }
 

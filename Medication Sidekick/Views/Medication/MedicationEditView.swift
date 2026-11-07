@@ -24,6 +24,7 @@ struct MedicationEditView: View {
     @State private var dosage: String = ""
     @State private var instructions: String = ""
     @State private var selectedMealKeys: Set<String> = []
+    @State private var timeOverrides: [String: DateComponents] = [:]
     @State private var frequency: MedicationFrequency = .daily
     @State private var isActive: Bool = true
     @State private var medicationType: MedicationType = .tablet
@@ -45,6 +46,7 @@ struct MedicationEditView: View {
         dosage != medication.dosage ||
         instructions != (medication.instructions ?? "") ||
         selectedMealKeys != Set(medication.mealsRaw) ||
+        timeOverrides != medication.timeOverrides ||
         frequency != medication.frequency ||
         isActive != medication.isActive ||
         medicationType != medication.medicationType ||
@@ -87,36 +89,11 @@ struct MedicationEditView: View {
                 }
 
                 if frequency != .asNeeded {
-                    Section("When to Take") {
-                        ForEach(mealTimeSettings) { setting in
-                            Button {
-                                toggleMeal(setting.key)
-                            } label: {
-                                HStack {
-                                    Image(systemName: setting.symbolName)
-                                        .frame(width: 24)
-                                        .foregroundStyle(.tint)
-
-                                    Text(setting.name)
-                                        .foregroundStyle(.primary)
-
-                                    Spacer()
-
-                                    Text(setting.displayTime)
-                                        .font(.caption)
-                                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
-
-                                    if selectedMealKeys.contains(setting.key) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.tint)
-                                    } else {
-                                        Image(systemName: "circle")
-                                            .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    MealReminderSection(
+                        mealTimeSettings: mealTimeSettings,
+                        selectedMealKeys: $selectedMealKeys,
+                        timeOverrides: $timeOverrides
+                    )
                 }
 
                 Section("Stock") {
@@ -176,6 +153,7 @@ struct MedicationEditView: View {
             dosage = medication.dosage
             instructions = medication.instructions ?? ""
             selectedMealKeys = Set(medication.mealsRaw)
+            timeOverrides = medication.timeOverrides
             frequency = medication.frequency
             isActive = medication.isActive
             medicationType = medication.medicationType
@@ -192,9 +170,11 @@ struct MedicationEditView: View {
         medication.name = name
         medication.dosage = dosage
         medication.instructions = instructions.isEmpty ? nil : instructions
+        let timesChanged = timeOverrides != medication.timeOverrides
         medication.mealsRaw = mealTimeSettings
             .filter { selectedMealKeys.contains($0.key) }
             .map(\.key)
+        medication.timeOverrides = timeOverrides.filter { selectedMealKeys.contains($0.key) }
         medication.frequency = frequency
         medication.isActive = isActive
         medication.medicationType = medicationType
@@ -212,7 +192,7 @@ struct MedicationEditView: View {
 
         do {
             try MedicationDoseGenerator.refreshDoses(for: medication, modelContext: modelContext)
-            if travelModeChanged {
+            if travelModeChanged || timesChanged {
                 try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
             }
         } catch {
@@ -227,15 +207,6 @@ struct MedicationEditView: View {
         }
         NotificationCenter.default.post(name: .medicationDidChange, object: nil)
         dismiss()
-    }
-
-    // MARK: - Helpers
-    private func toggleMeal(_ key: String) {
-        if selectedMealKeys.contains(key) {
-            selectedMealKeys.remove(key)
-        } else {
-            selectedMealKeys.insert(key)
-        }
     }
 }
 

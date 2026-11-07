@@ -26,6 +26,9 @@ final class Medication {
     // MARK: - Scheduling
     var frequencyRaw: String = MedicationFrequency.daily.rawValue
     var mealsRaw: [String] = []
+    /// Per-meal reminder time overrides as "mealKey=HH:mm". A meal with no entry follows the
+    /// meal's own time. Read and written through `timeOverrides` (Medication+MealTimes.swift).
+    var mealTimeOverridesRaw: [String] = []
     var startDate: Date = Date()
     var endDate: Date? = nil
     /// Comma-separated Calendar weekday integers (1=Sun … 7=Sat) for `.specificDays` frequency.

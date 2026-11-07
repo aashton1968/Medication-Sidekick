@@ -108,7 +108,7 @@ struct MedicationDetailView: View {
                             Text("No meals set")
                                 .foregroundStyle(themeManager.selectedTheme.textSecondary)
                         } else {
-                            Text(medication.mealDisplayNames(settings: mealTimeSettings).joined(separator: ", "))
+                            Text(medication.reminderSummary(settings: mealTimeSettings).joined(separator: ", "))
                                 .foregroundStyle(themeManager.selectedTheme.textSecondary)
                         }
 
