@@ -69,28 +69,56 @@ struct DoseRow: View {
         return String(format: "Late %d:%02d", minutes / 60, minutes % 60)
     }
 
+    /// "500 mg · Take with food": dosage first, then instructions when there are any.
+    private var detailText: String? {
+        let dosage = dose.medication?.dosage.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let instructions = dose.medication?.instructions?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let parts = [dosage, instructions].filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// The medication's type icon in a tinted tile, with a status badge on its corner once handled.
+    private var medicationIcon: some View {
+        Image(systemName: dose.medication?.medicationType.symbolName ?? "pill.fill")
+            .font(.system(size: 22, weight: .semibold))
+            .foregroundStyle(theme.accentPrimary)
+            .frame(width: 48, height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(theme.accentPrimary.opacity(0.12))
+            )
+            .overlay(alignment: .bottomTrailing) {
+                if dose.status != .scheduled {
+                    Image(systemName: iconName)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(iconColor)
+                        .background(Circle().fill(theme.surfaceBase).padding(1))
+                        .offset(x: 6, y: 6)
+                }
+            }
+            .accessibilityHidden(true)
+    }
+
     var body: some View {
         Button(action: toggle) {
             HStack(spacing: 14) {
 
-                Image(systemName: iconName)
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(iconColor)
+                medicationIcon
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(dose.mealDisplayName(settings: mealTimeSettings))
-                        .font(.system(.callout, design: .rounded, weight: .bold))
-                        .foregroundStyle(theme.accentPrimary)
-
                     Text(dose.medication?.name ?? "Medication")
                         .font(.system(.title3, design: .rounded, weight: .semibold))
                         .foregroundStyle(theme.textPrimary)
 
-                    if let dosage = dose.medication?.dosage, !dosage.isEmpty {
-                        Text(dosage)
+                    if let detail = detailText {
+                        Text(detail)
                             .font(.subheadline)
                             .foregroundStyle(theme.textSecondary)
                     }
+
+                    Text(dose.mealDisplayName(settings: mealTimeSettings))
+                        .font(.system(.callout, design: .rounded, weight: .bold))
+                        .foregroundStyle(theme.accentPrimary)
                 }
 
                 Spacer(minLength: 8)
