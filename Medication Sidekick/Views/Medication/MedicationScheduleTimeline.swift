@@ -104,7 +104,7 @@ private struct ScheduleRowView: View {
         HStack(spacing: 12) {
             Image(systemName: medication.medicationType.symbolName)
                 .font(.title3)
-                .foregroundStyle(theme.accentPrimary)
+                .foregroundStyle(theme.accentTint)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 3) {

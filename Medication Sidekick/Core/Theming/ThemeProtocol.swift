@@ -32,6 +32,9 @@ protocol ThemeProtocol {
     // Semantic accent tokens
     var accentPrimary: Color { get }
     var accentSecondary: Color { get }
+    /// Accent for foreground use (icons, tab selection, text, thin marks). Unlike `accentPrimary`,
+    /// which is a fill that must carry white text, this stays light enough to read on dark surfaces.
+    var accentTint: Color { get }
 
     // Semantic status tokens
     var statusSuccess: Color { get }

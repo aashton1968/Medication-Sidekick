@@ -28,7 +28,7 @@ struct DosePillView: View {
     private var accent: Color {
         switch state.kind {
         case .overdue:  theme.statusError
-        case .due:      theme.accentPrimary
+        case .due:      theme.accentTint
         case .upcoming: theme.textMuted
         }
     }

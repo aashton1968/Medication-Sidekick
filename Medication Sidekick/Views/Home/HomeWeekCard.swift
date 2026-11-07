@@ -47,7 +47,7 @@ struct HomeWeekCard: View {
     private var toneColor: Color {
         switch summary.tone {
         case .overdue: theme.statusError
-        case .due:     theme.accentPrimary
+        case .due:     theme.accentTint
         case .ok:      theme.statusSuccess
         }
     }
@@ -80,7 +80,7 @@ struct HomeWeekCard: View {
             ForEach(summary.attention.prefix(maxListedDoses)) { item in
                 HStack(spacing: 10) {
                     Circle()
-                        .fill(item.isOverdue ? theme.statusError : theme.accentPrimary)
+                        .fill(item.isOverdue ? theme.statusError : theme.accentTint)
                         .frame(width: 8, height: 8)
                         .accessibilityHidden(true)
 
@@ -162,7 +162,7 @@ struct HomeWeekCard: View {
             .background {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(theme.accentPrimary.opacity(0.14))
+                        .fill(theme.accentTint.opacity(0.14))
                 }
             }
             .contentShape(Rectangle())
@@ -180,7 +180,7 @@ struct HomeWeekCard: View {
         let trackColor = day.state == .missed
             ? theme.statusError.opacity(0.18)
             : theme.borderSubtle.opacity(0.7)
-        let fillColor = day.state == .complete ? theme.statusSuccess : theme.accentPrimary
+        let fillColor = day.state == .complete ? theme.statusSuccess : theme.accentTint
 
         return ZStack(alignment: .bottom) {
             Capsule().fill(trackColor)

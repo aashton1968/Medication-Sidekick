@@ -31,6 +31,7 @@ struct Main: ThemeProtocol {
     // Semantic accent tokens
     var accentPrimary: Color { Color("mnPrimaryAccentColor") }
     var accentSecondary: Color { Color("mnButtonBackgroundColorEnd") }
+    var accentTint: Color { Color("mnAccentTint") }
 
     // Semantic status tokens
     var statusSuccess: Color { Color(hex: "#009999") }

@@ -81,11 +81,11 @@ struct DoseRow: View {
     private var medicationIcon: some View {
         Image(systemName: dose.medication?.medicationType.symbolName ?? "pill.fill")
             .font(.system(size: 22, weight: .semibold))
-            .foregroundStyle(theme.accentPrimary)
+            .foregroundStyle(theme.accentTint)
             .frame(width: 48, height: 48)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(theme.accentPrimary.opacity(0.12))
+                    .fill(theme.accentTint.opacity(0.12))
             )
             .overlay(alignment: .bottomTrailing) {
                 if dose.status != .scheduled {
@@ -118,7 +118,7 @@ struct DoseRow: View {
 
                     Text(dose.mealDisplayName(settings: mealTimeSettings))
                         .font(.system(.callout, design: .rounded, weight: .bold))
-                        .foregroundStyle(theme.accentPrimary)
+                        .foregroundStyle(theme.accentTint)
                 }
 
                 Spacer(minLength: 8)

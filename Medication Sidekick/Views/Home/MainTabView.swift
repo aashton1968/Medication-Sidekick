@@ -84,7 +84,7 @@ private struct MainTabContent: View {
                 }
             }
         }
-        .tint(themeManager.selectedTheme.accentPrimary)
+        .tint(themeManager.selectedTheme.accentTint)
         .dosePillAccessory(pillState)
         .sheet(isPresented: $showingInitialSubscriptionPrompt) {
             PaywallView()
