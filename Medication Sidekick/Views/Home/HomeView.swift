@@ -24,6 +24,8 @@ struct HomeView: View {
     /// `nil` means "today", so the selection follows midnight rollover on its own.
     @State private var selectedDay: Date?
     @State private var adherenceService = MedicationAdherenceService()
+    /// Scroll position, read only by the background so scrolling doesn't re-render the whole screen.
+    @State private var scrollTracker = ScrollTracker()
 
     init() {
         let calendar = Self.calendar
@@ -50,27 +52,14 @@ struct HomeView: View {
         TimelineView(.everyMinute) { context in
             content(now: context.date)
         }
-        .background(alignment: .top) {
-            ZStack(alignment: .top) {
-                theme.bgBase
-                // Solid behind the whole hero so its white text stays readable, then fades under the card.
-                LinearGradient(
-                    stops: [
-                        .init(color: theme.accentPrimary, location: 0),
-                        .init(color: theme.accentPrimary, location: 0.68),
-                        .init(color: theme.accentPrimary.opacity(0), location: 1)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 520)
-            }
-            .ignoresSafeArea()
-        }
+        .background { HomeBackground(tracker: scrollTracker) }
         .navigationTitle("Home")
         .navigationBarTitleDisplayMode(.inline)
-        // Let the hero gradient run up behind the bar instead of a separate tinted band.
+        // Transparent bar over the teal band drawn by HomeBackground. (A solid toolbarBackground
+        // resolves the accent colour in the bar's own appearance and comes out a different blue.)
+        // White text is forced so it doesn't flip to black over light content.
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task { await refreshDoses() }
         .refreshable { await refreshDoses() }
     }
@@ -82,7 +71,7 @@ struct HomeView: View {
         let calendar = Self.calendar
         let today = calendar.startOfDay(for: now)
         let selectedDate = selectedDay.map { calendar.startOfDay(for: $0) } ?? today
-        let groups = slotGroups(for: selectedDate)
+        let doses = sortedDoses(for: selectedDate)
 
         return ScrollViewReader { proxy in
         List {
@@ -122,40 +111,52 @@ struct HomeView: View {
                     .listRowInsets(EdgeInsets(top: 12, leading: 4, bottom: 0, trailing: 4))
                     .id(Self.dosesAnchor)
 
-                if groups.isEmpty {
+                if doses.isEmpty {
                     Text("No medications scheduled for this day")
                         .font(.subheadline)
                         .foregroundStyle(theme.textSecondary)
                 }
             }
 
-            // One section per meal, with DoseRow as a direct list row so swipe actions work.
-            ForEach(groups) { group in
-                Section {
-                    ForEach(group.doses) { dose in
-                        DoseRow(dose: dose, mealTimeSettings: mealTimeSettings)
-                    }
-                } header: {
-                    Text(group.time.isEmpty ? group.name : "\(group.name) · \(group.time)")
+            // One flat list of cards ordered by due time (taken time once taken).
+            // DoseRow is a direct list row so swipe actions work.
+            Section {
+                ForEach(doses) { dose in
+                    DoseRow(dose: dose, mealTimeSettings: mealTimeSettings, now: now)
                 }
             }
         }
+        .listRowSpacing(10)
         .scrollContentBackground(.hidden)
         .contentMargins(.top, 0, for: .scrollContent)
         .listSectionSpacing(.compact)
+        .scrollEdgeEffectStyle(.hard, for: .top)
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top
+        } action: { _, offset in
+            scrollTracker.offset = offset
+        }
         }
     }
 
     // MARK: - Helpers
 
-    private func slotGroups(for day: Date) -> [TimeSlotGroup] {
+    /// The day's doses ordered by when they were due, or when they were taken once taken.
+    private func sortedDoses(for day: Date) -> [MedicationDose] {
         let calendar = Self.calendar
-        let dayDoses = deduplicatedDoses(
+        func sortTime(_ dose: MedicationDose) -> Date {
+            dose.status == .taken ? (dose.takenTime ?? dose.scheduledDate) : dose.scheduledDate
+        }
+        return deduplicatedDoses(
             weekDoses.filter {
                 $0.medication?.isActive == true && calendar.isDate($0.scheduledDate, inSameDayAs: day)
             }
         )
-        return makeSlotGroups(from: dayDoses, settings: mealTimeSettings)
+        .sorted { lhs, rhs in
+            let (l, r) = (sortTime(lhs), sortTime(rhs))
+            if l != r { return l < r }
+            return medicationDoseSortsBefore(lhs, rhs)
+        }
     }
 
     private func dayTitle(for day: Date, today: Date) -> String {
@@ -175,6 +176,46 @@ struct HomeView: View {
             _ = try adherenceService.syncMissedStatuses(modelContext: modelContext)
         } catch {
             os_log(.error, "Failed to refresh doses: %{public}@", error.localizedDescription)
+        }
+    }
+}
+
+@Observable
+private final class ScrollTracker {
+    var offset: CGFloat = 0
+}
+
+/// Teal hero gradient that scrolls away with the content, plus a fixed teal band behind the
+/// status bar and title so their white text stays readable once the gradient has scrolled off.
+private struct HomeBackground: View {
+
+    @Environment(ThemeManager.self) private var themeManager
+    let tracker: ScrollTracker
+
+    private var theme: ThemeProtocol { themeManager.selectedTheme }
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                theme.bgBase
+
+                // Solid behind the whole hero so its white text stays readable, then fades under the card.
+                LinearGradient(
+                    stops: [
+                        .init(color: theme.accentPrimary, location: 0),
+                        .init(color: theme.accentPrimary, location: 0.68),
+                        .init(color: theme.accentPrimary.opacity(0), location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 520)
+                .offset(y: -max(tracker.offset, 0))
+
+                theme.accentPrimary
+                    .frame(height: geometry.safeAreaInsets.top)
+            }
+            .ignoresSafeArea()
         }
     }
 }

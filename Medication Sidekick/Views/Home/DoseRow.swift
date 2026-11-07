@@ -2,7 +2,7 @@
 //  DoseRow.swift
 //  Medication Sidekick
 //
-//  A single dose in the Home list: tap to take, swipe to take / skip.
+//  A single dose in the Home list, drawn as a card: tap to take, swipe to take / skip.
 //  Must live inside a List for the swipe actions to appear.
 //
 
@@ -23,7 +23,11 @@ struct DoseRow: View {
 
     let dose: MedicationDose
     let mealTimeSettings: [MealTimeSetting]
+    /// Used for the "Late" text. Passed in so the Home list can keep it current by the minute.
+    var now: Date = Date()
     @State private var isToggling = false
+
+    private var theme: ThemeProtocol { themeManager.selectedTheme }
 
     private var iconName: String {
         switch dose.status {
@@ -46,40 +50,69 @@ struct DoseRow: View {
             return .secondary
         }
     }
-    
+
+    private var isHandled: Bool {
+        dose.status == .taken || dose.status == .skipped
+    }
+
+    /// "Late 2:05" (hours:minutes since it was due) for today's unlogged doses,
+    /// "Missed" for unlogged doses on earlier days, nothing otherwise.
+    private var lateText: String? {
+        guard dose.status == .scheduled || dose.status == .missed else { return nil }
+        let calendar = Calendar.current
+        guard calendar.isDateInToday(dose.scheduledDate) else {
+            return dose.scheduledDate < calendar.startOfDay(for: now) ? "Missed" : nil
+        }
+        let seconds = now.timeIntervalSince(dose.scheduledDate)
+        guard seconds >= 60 else { return nil }
+        let minutes = Int(seconds / 60)
+        return String(format: "Late %d:%02d", minutes / 60, minutes % 60)
+    }
+
     var body: some View {
         Button(action: toggle) {
-        HStack(spacing: 12) {
+            HStack(spacing: 14) {
 
-            Image(systemName: iconName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(iconColor)
+                Image(systemName: iconName)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(iconColor)
 
-            VStack(alignment: .leading) {
-
-                Text(dose.medication?.name ?? "Medication")
-                    .font(.headline)
-
-                HStack(spacing: 4) {
-                    Text(dose.medication?.dosage ?? "")
-                    Text("·")
+                VStack(alignment: .leading, spacing: 3) {
                     Text(dose.mealDisplayName(settings: mealTimeSettings))
+                        .font(.system(.callout, design: .rounded, weight: .bold))
+                        .foregroundStyle(theme.accentPrimary)
+
+                    Text(dose.medication?.name ?? "Medication")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundStyle(theme.textPrimary)
+
+                    if let dosage = dose.medication?.dosage, !dosage.isEmpty {
+                        Text(dosage)
+                            .font(.subheadline)
+                            .foregroundStyle(theme.textSecondary)
+                    }
                 }
-                .font(.subheadline)
-                .foregroundStyle(themeManager.selectedTheme.textSecondary)
+
+                Spacer(minLength: 8)
+
+                trailing
             }
-
-            Spacer()
-
-            Text(dose.scheduledDate, style: .time)
-                .font(.subheadline)
-        }
-        .contentShape(Rectangle())
-        .allowsHitTesting(!isToggling)
-        .opacity(dose.status == .taken || dose.status == .skipped ? 0.5 : 1.0)
-        .animation(.easeInOut, value: dose.status)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+            .allowsHitTesting(!isToggling)
+            .opacity(isHandled ? 0.55 : 1.0)
+            .animation(.easeInOut, value: dose.status)
         }
         .buttonStyle(.plain)
+        // Each row is its own card, with the list's row spacing as the gap between them.
+        .listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden)
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(theme.surfaceBase)
+                .premiumCardShadow(theme: theme)
+        )
         .contextMenu {
             if dose.status == .scheduled || dose.status == .skipped {
                 Button {
@@ -113,6 +146,37 @@ struct DoseRow: View {
                     Label(dose.status == .skipped ? "Undo Skip" : "Skip", systemImage: dose.status == .skipped ? "arrow.uturn.backward" : "minus.circle")
                 }
                 .tint(.gray)
+            }
+        }
+    }
+
+    /// Right-hand side: the due time (or the time it was taken) and a small status line.
+    private var trailing: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            switch dose.status {
+            case .taken:
+                Text(dose.takenTime ?? dose.scheduledDate, style: .time)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(theme.textPrimary)
+                Text("Taken")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(theme.statusSuccess)
+            case .skipped:
+                Text(dose.scheduledDate, style: .time)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(theme.textPrimary)
+                Text("Skipped")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(theme.textSecondary)
+            case .scheduled, .missed:
+                Text(dose.scheduledDate, style: .time)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(theme.textPrimary)
+                if let lateText {
+                    Text(lateText)
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(theme.statusError)
+                }
             }
         }
     }
@@ -176,26 +240,29 @@ struct DoseRow: View {
     context.insert(medication)
 
     // One row per status, so all four swipe/tap states are visible at a glance —
-    // including "scheduled but overdue," which drives the .missed icon/color.
-    let scheduledDose = MedicationDose(medication: medication, mealTime: .breakfast, scheduledDate: Date())
+    // including "scheduled but overdue," which drives the Late text.
+    let scheduledDose = MedicationDose(medication: medication, mealTime: .breakfast, scheduledDate: Date().addingTimeInterval(3600))
     let takenDose = MedicationDose(medication: medication, mealTime: .lunch, scheduledDate: Date(), status: .taken)
+    takenDose.takenTime = Date()
     let skippedDose = MedicationDose(medication: medication, mealTime: .dinner, scheduledDate: Date(), status: .skipped)
-    let missedDose = MedicationDose(
+    let lateDose = MedicationDose(
         medication: medication,
         mealTime: .supper,
-        scheduledDate: Date().addingTimeInterval(-6 * 3600),
-        status: .missed
+        scheduledDate: Date().addingTimeInterval(-2 * 3600 - 300),
+        status: .scheduled
     )
 
-    [scheduledDose, takenDose, skippedDose, missedDose].forEach { context.insert($0) }
+    [scheduledDose, takenDose, skippedDose, lateDose].forEach { context.insert($0) }
     try? context.save()
 
     return List {
         DoseRow(dose: scheduledDose, mealTimeSettings: [])
         DoseRow(dose: takenDose, mealTimeSettings: [])
         DoseRow(dose: skippedDose, mealTimeSettings: [])
-        DoseRow(dose: missedDose, mealTimeSettings: [])
+        DoseRow(dose: lateDose, mealTimeSettings: [])
     }
+    .listRowSpacing(10)
+    .scrollContentBackground(.hidden)
     .modelContainer(container)
     .environment(themeManager)
 }
