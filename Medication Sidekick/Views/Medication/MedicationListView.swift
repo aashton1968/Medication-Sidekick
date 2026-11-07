@@ -38,7 +38,15 @@ struct MedicationListView: View {
         }
     }
 
-    var body: some View {
+    private enum Mode: String, CaseIterable, Identifiable {
+        case list = "List"
+        case schedule = "Schedule"
+        var id: String { rawValue }
+    }
+
+    @State private var mode: Mode = .list
+
+    private var medicationList: some View {
         List {
 
             if sortedMedications.isEmpty {
@@ -73,6 +81,26 @@ struct MedicationListView: View {
                     }
             }
             .onDelete(perform: delete)
+        }
+    }
+
+    var body: some View {
+        Group {
+            switch mode {
+            case .list:     medicationList
+            case .schedule: MedicationScheduleTimeline()
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !sortedMedications.isEmpty {
+                Picker("View", selection: $mode) {
+                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(.bar)
+            }
         }
         
         .navigationTitle("Medications")

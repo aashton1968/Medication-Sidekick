@@ -15,9 +15,6 @@ struct MoreView: View {
     var body: some View {
         List {
             Section {
-                NavigationLink(value: Route.medicationSchedule) {
-                    Label("Medication Schedule", systemImage: "calendar.circle.fill")
-                }
                 NavigationLink(value: Route.mealTimeSettings) {
                     Label("Meal Times", systemImage: "fork.knife")
                 }

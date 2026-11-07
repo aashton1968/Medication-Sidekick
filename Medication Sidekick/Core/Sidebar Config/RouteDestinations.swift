@@ -28,8 +28,6 @@ private struct RouteDestinationsModifier: ViewModifier {
             EmptyView()
         case .medications:
             MedicationListView()
-        case .medicationSchedule:
-            MedicationSchedulesView()
         case .medicationNew:
             MedicationAddView()
         case .mealTimeSettings:

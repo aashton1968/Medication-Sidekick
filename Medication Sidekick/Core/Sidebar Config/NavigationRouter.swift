@@ -36,7 +36,7 @@ final class NavigationRouter {
         case .medication, .medicationNew:
             selectedTab = .medicines
             medicinesPath.append(route)
-        case .medicationSchedule, .mealTimeSettings, .settings, .help:
+        case .mealTimeSettings, .settings, .help:
             selectedTab = .more
             morePath.append(route)
         }
@@ -57,7 +57,6 @@ final class NavigationRouter {
 enum Route: Hashable {
     case home
     case todayView
-    case medicationSchedule
     case medications
     case medication(id: UUID)
     case medicationNew
