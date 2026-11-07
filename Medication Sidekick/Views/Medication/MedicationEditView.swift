@@ -89,7 +89,7 @@ struct MedicationEditView: View {
                 }
 
                 if frequency != .asNeeded {
-                    MealReminderSection(
+                    DoseTimesSection(
                         mealTimeSettings: mealTimeSettings,
                         selectedMealKeys: $selectedMealKeys,
                         timeOverrides: $timeOverrides
