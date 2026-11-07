@@ -24,15 +24,6 @@ struct HomeSummary {
         var id: Date { date }
     }
 
-    /// One entry per dose today, in time order. Drives the segmented ring.
-    enum Segment {
-        case taken
-        case skipped
-        case missed
-        case due
-        case later
-    }
-
     let total: Int
     let taken: Int
     let dueNow: Int
@@ -41,12 +32,11 @@ struct HomeSummary {
     /// Distinct medication names needing action (due now or missed), earliest first.
     let attentionNames: [String]
     let days: [Day]
-    let segments: [Segment]
     /// Taken ÷ scheduled for the week so far. `nil` when nothing has been scheduled yet.
     let weekPercent: Int?
 
     init(total: Int, taken: Int, dueNow: Int, laterToday: Int, missed: Int,
-         attentionNames: [String], days: [Day], weekPercent: Int?, segments: [Segment] = []) {
+         attentionNames: [String], days: [Day], weekPercent: Int?) {
         self.total = total
         self.taken = taken
         self.dueNow = dueNow
@@ -55,7 +45,6 @@ struct HomeSummary {
         self.attentionNames = attentionNames
         self.days = days
         self.weekPercent = weekPercent
-        self.segments = segments
     }
 
     init(doses: [MedicationDose], now: Date = Date()) {
@@ -81,27 +70,19 @@ struct HomeSummary {
         // Today
         let today = active
             .filter { $0.scheduledDate >= startOfToday && $0.scheduledDate < startOfTomorrow }
-            .sorted {
-                // Time order; doses at the same time list taken first so the ring fills clockwise.
-                if $0.scheduledDate != $1.scheduledDate { return $0.scheduledDate < $1.scheduledDate }
-                return $0.status.sortPriority > $1.status.sortPriority
-            }
+            .sorted { $0.scheduledDate < $1.scheduledDate }
 
         var taken = 0, dueNow = 0, later = 0, missed = 0
         var names: [String] = []
-        var segments: [Segment] = []
         for dose in today {
-            if dose.status == .taken { taken += 1; segments.append(.taken); continue }
-            if dose.status == .skipped { segments.append(.skipped); continue }
+            if dose.status == .taken { taken += 1; continue }
+            if dose.status == .skipped { continue }
             if isMissed(dose) {
                 missed += 1
-                segments.append(.missed)
             } else if dose.scheduledDate <= now {
                 dueNow += 1
-                segments.append(.due)
             } else {
                 later += 1
-                segments.append(.later)
                 continue
             }
             if let name = dose.medication?.name, !name.isEmpty, !names.contains(name) {
@@ -144,8 +125,7 @@ struct HomeSummary {
             missed: missed,
             attentionNames: names,
             days: days,
-            weekPercent: percent,
-            segments: segments
+            weekPercent: percent
         )
     }
 
@@ -186,8 +166,7 @@ struct HomeSummary {
         return HomeSummary(
             total: 4, taken: 1, dueNow: 2, laterToday: 1, missed: 0,
             attentionNames: ["Trurapi", "Atorvastatin"],
-            days: days, weekPercent: 82,
-            segments: [.taken, .taken, .missed, .due, .due, .later, .later, .later]
+            days: days, weekPercent: 82
         )
     }
 }

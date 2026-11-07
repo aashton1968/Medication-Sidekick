@@ -53,17 +53,12 @@ struct HomeView: View {
         .background(alignment: .top) {
             ZStack(alignment: .top) {
                 theme.bgBase
-                // Stays saturated behind the ring so its arcs keep contrast, then fades out under the card.
                 LinearGradient(
-                    stops: [
-                        .init(color: theme.accentPrimary, location: 0),
-                        .init(color: theme.accentPrimary, location: 0.68),
-                        .init(color: theme.accentPrimary.opacity(0), location: 1)
-                    ],
+                    colors: [theme.accentPrimary, theme.accentPrimary.opacity(0)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 520)
+                .frame(height: 460)
             }
             .ignoresSafeArea()
         }
