@@ -102,7 +102,7 @@ struct HomeWeekCard: View {
         .frame(maxWidth: .infinity)
         .background {
             if isSelected {
-                Capsule().fill(theme.bgSubtle.opacity(0.6))
+                Capsule().fill(theme.accentPrimary.opacity(0.14))
             }
         }
         .contentShape(Rectangle())

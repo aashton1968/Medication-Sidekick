@@ -41,6 +41,8 @@ struct HomeView: View {
         return calendar
     }
 
+    private static let dosesAnchor = "dosesTitle"
+
     private var theme: ThemeProtocol { themeManager.selectedTheme }
 
     var body: some View {
@@ -77,7 +79,8 @@ struct HomeView: View {
         let selectedDate = selectedDay.map { calendar.startOfDay(for: $0) } ?? today
         let groups = slotGroups(for: selectedDate)
 
-        return List {
+        return ScrollViewReader { proxy in
+        List {
             Section {
                 HomeHeroView(summary: summary, date: now)
                     .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
@@ -90,33 +93,52 @@ struct HomeView: View {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedDay = calendar.isDate(day, inSameDayAs: today) ? nil : day
                     }
+                    // Jump to the day's doses so the change is visible, not hidden below the card.
+                    Task { @MainActor in
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(Self.dosesAnchor, anchor: .top)
+                        }
+                    }
                 }
                 .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
 
+            // Day title (and empty state). A plain row, not a header, so it scrolls with the list.
             Section {
+                Text(dayTitle(for: selectedDate, today: today))
+                    .font(.footnote.weight(.semibold))
+                    .textCase(.uppercase)
+                    .tracking(1.2)
+                    .foregroundStyle(theme.textSecondary)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 12, leading: 4, bottom: 0, trailing: 4))
+                    .id(Self.dosesAnchor)
+
                 if groups.isEmpty {
                     Text("No medications scheduled for this day")
                         .font(.subheadline)
                         .foregroundStyle(theme.textSecondary)
-                } else {
-                    ForEach(groups) { group in
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(group.doses) { dose in
-                                DoseRow(dose: dose, mealTimeSettings: mealTimeSettings)
-                            }
-                        }
-                    }
                 }
-            } header: {
-                Text(dayTitle(for: selectedDate, today: today))
+            }
+
+            // One section per meal, with DoseRow as a direct list row so swipe actions work.
+            ForEach(groups) { group in
+                Section {
+                    ForEach(group.doses) { dose in
+                        DoseRow(dose: dose, mealTimeSettings: mealTimeSettings)
+                    }
+                } header: {
+                    Text(group.time.isEmpty ? group.name : "\(group.name) · \(group.time)")
+                }
             }
         }
         .scrollContentBackground(.hidden)
         .contentMargins(.top, 0, for: .scrollContent)
         .listSectionSpacing(.compact)
+        }
     }
 
     // MARK: - Helpers
