@@ -2,7 +2,7 @@
 //  HomeHeroView.swift
 //  Medication Sidekick
 //
-//  Top of the Today tab: date, progress ring and three headline stats.
+//  Top of the Home tab: date, progress ring and a compact Due / Later / Missed list.
 //  Sits on the accent gradient drawn by HomeView.
 //
 
@@ -28,12 +28,14 @@ struct HomeHeroView: View {
 
             HStack(spacing: 24) {
                 ring
-                VStack(alignment: .leading, spacing: 14) {
-                    stat(summary.dueNow, "due now")
-                    stat(summary.laterToday, "later today")
-                    stat(summary.missed, "missed")
+                VStack(spacing: 0) {
+                    statRow("Due", summary.dueNow)
+                    divider
+                    statRow("Later", summary.laterToday)
+                    divider
+                    statRow("Missed", summary.missed)
                 }
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity)
             }
         }
         .foregroundStyle(theme.textOnAccent)
@@ -72,14 +74,25 @@ struct HomeHeroView: View {
         .frame(width: ringSize, height: ringSize)
     }
 
-    private func stat(_ value: Int, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("\(value)")
-                .font(.system(size: 34, weight: .semibold, design: .rounded))
+    /// Label on the left, count on the right, so the three read as one compact list.
+    private func statRow(_ label: String, _ value: Int) -> some View {
+        HStack(alignment: .firstTextBaseline) {
             Text(label)
-                .font(.subheadline.weight(.medium))
+                .font(.system(.body, design: .rounded, weight: .medium))
                 .opacity(0.9)
+            Spacer(minLength: 8)
+            Text("\(value)")
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .monospacedDigit()
+                .contentTransition(.numericText())
         }
+        .padding(.vertical, 12)
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(theme.textOnAccent.opacity(0.25))
+            .frame(height: 1)
     }
 }
 
