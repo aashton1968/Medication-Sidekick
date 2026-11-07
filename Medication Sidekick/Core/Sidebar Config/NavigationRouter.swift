@@ -7,22 +7,47 @@
 
 import SwiftUI
 
+/// Top-level tabs shown in the tab bar.
+enum AppTab: Hashable {
+    case today
+    case medicines
+    case more
+}
+
+/// Owns tab selection plus one `NavigationPath` per tab, so pushing a detail
+/// screen never replaces the tab bar. `navigate(_:)` picks the right tab for a route.
 @Observable
 final class NavigationRouter {
-    var path = NavigationPath()
+    var selectedTab: AppTab = .today
+    var todayPath = NavigationPath()
+    var medicinesPath = NavigationPath()
+    var morePath = NavigationPath()
     var currentRoute: Route? = .home
 
     func navigate(_ route: Route) {
-        if route == .home {
-            path = NavigationPath()
-        } else {
-            path.append(route)
+        switch route {
+        case .home, .todayView:
+            // Today has been rolled into Home.
+            selectedTab = .today
+            todayPath = NavigationPath()
+        case .medications:
+            selectedTab = .medicines
+            medicinesPath = NavigationPath()
+        case .medication, .medicationNew:
+            selectedTab = .medicines
+            medicinesPath.append(route)
+        case .medicationSchedule, .mealTimeSettings, .settings, .help:
+            selectedTab = .more
+            morePath.append(route)
         }
         currentRoute = route
     }
 
     func reset() {
-        path = NavigationPath()
+        todayPath = NavigationPath()
+        medicinesPath = NavigationPath()
+        morePath = NavigationPath()
+        selectedTab = .today
         currentRoute = .home
     }
 }

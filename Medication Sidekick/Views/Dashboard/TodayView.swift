@@ -233,6 +233,7 @@ struct TodaySnapshotSection: View {
     @State private var adherenceService = MedicationAdherenceService()
 
     let openTodayButtonTitle: String?
+    var showsDailyStatus: Bool = true
 
     private var slotGroups: [TimeSlotGroup] {
         makeSlotGroups(from: todayDoses, settings: mealTimeSettings)
@@ -254,7 +255,9 @@ struct TodaySnapshotSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            DailyStatusCardView(snapshot: dailyStatusSnapshot)
+            if showsDailyStatus {
+                DailyStatusCardView(snapshot: dailyStatusSnapshot)
+            }
 
             ForEach(pastIncompleteSlots) { group in
                 NextMedsCard(

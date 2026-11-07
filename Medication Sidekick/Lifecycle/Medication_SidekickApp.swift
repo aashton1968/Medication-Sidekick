@@ -134,7 +134,7 @@ struct Medication_SidekickApp: App {
     var body: some Scene {
         WindowGroup {
             if let container = sharedModelContainer {
-                HomeView()
+                MainTabView()
                     .environment(navigationRouter)
                     .environment(subscriptionService)
                     .environment(themeManager)
