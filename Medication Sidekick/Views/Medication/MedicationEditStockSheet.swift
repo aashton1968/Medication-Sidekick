@@ -30,14 +30,7 @@ struct MedicationEditStockSheet: View {
         NavigationStack {
             Form {
                 Section("Stock") {
-                    HStack {
-                        Text("Current Stock")
-                        Spacer()
-                        TextField("0", value: $currentStock, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
-                    }
+                    StockQuantityRow(stock: $currentStock)
 
                     Stepper("Per dose: \(doseQuantity)", value: $doseQuantity, in: 1...10)
 
