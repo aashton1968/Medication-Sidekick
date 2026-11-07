@@ -12,6 +12,9 @@ struct HomeWeekCard: View {
     @Environment(ThemeManager.self) private var themeManager
 
     let summary: HomeSummary
+    /// The day whose doses are listed below the card.
+    let selectedDate: Date
+    let onSelect: (Date) -> Void
 
     private var theme: ThemeProtocol { themeManager.selectedTheme }
 
@@ -59,7 +62,7 @@ struct HomeWeekCard: View {
                 Text(summary.idleMessage)
             }
         }
-        .font(.system(.title, design: .rounded, weight: .regular))
+        .font(.system(.title2, design: .rounded, weight: .regular))
         .foregroundStyle(theme.textPrimary)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -68,8 +71,23 @@ struct HomeWeekCard: View {
 
     private func dayCell(_ day: HomeSummary.Day) -> some View {
         let isToday = calendar.isDateInToday(day.date)
+        let isSelected = calendar.isDate(day.date, inSameDayAs: selectedDate)
+        let isFuture = day.date > calendar.startOfDay(for: Date())
 
-        return VStack(spacing: 8) {
+        return Button {
+            onSelect(day.date)
+        } label: {
+            dayCellContent(day, isToday: isToday, isSelected: isSelected)
+        }
+        .buttonStyle(.plain)
+        .disabled(isFuture)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel(for: day))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func dayCellContent(_ day: HomeSummary.Day, isToday: Bool, isSelected: Bool) -> some View {
+        VStack(spacing: 8) {
             Text(day.date, format: .dateTime.weekday(.abbreviated))
                 .font(.subheadline.weight(isToday ? .bold : .regular))
                 .foregroundStyle(isToday ? theme.textPrimary : theme.textSecondary)
@@ -83,12 +101,11 @@ struct HomeWeekCard: View {
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
         .background {
-            if isToday {
+            if isSelected {
                 Capsule().fill(theme.bgSubtle.opacity(0.6))
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel(for: day))
+        .contentShape(Rectangle())
     }
 
     private func ringColor(for state: HomeSummary.Day.State) -> Color {
@@ -114,7 +131,7 @@ struct HomeWeekCard: View {
 
 #if DEBUG
 #Preview {
-    HomeWeekCard(summary: .preview)
+    HomeWeekCard(summary: .preview, selectedDate: Date(), onSelect: { _ in })
         .padding()
         .environment(ThemeManager())
 }

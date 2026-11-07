@@ -56,7 +56,8 @@ struct HomeSummary {
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? startOfToday
         let grace = Constants.medicationMissedGracePeriod
 
-        let active = doses.filter { $0.medication?.isActive == true }
+        // CloudKit can sync duplicate dose rows; collapse them so counts stay honest.
+        let active = deduplicatedDoses(doses.filter { $0.medication?.isActive == true })
 
         func isMissed(_ dose: MedicationDose) -> Bool {
             switch dose.status {

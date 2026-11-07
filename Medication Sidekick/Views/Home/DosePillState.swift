@@ -27,7 +27,7 @@ struct DosePillState {
         guard let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) else { return nil }
         let grace = Constants.medicationMissedGracePeriod
 
-        let remaining = doses
+        let remaining = deduplicatedDoses(doses)
             .filter { dose in
                 dose.medication?.isActive == true
                     && (dose.status == .scheduled || dose.status == .missed)
