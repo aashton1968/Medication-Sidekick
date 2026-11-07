@@ -21,7 +21,27 @@ struct HomeSummary {
 
         let date: Date
         let state: State
+        var taken: Int = 0
+        var total: Int = 0
         var id: Date { date }
+
+        /// Share of the day's doses taken, 0...1.
+        var fraction: Double { total > 0 ? Double(taken) / Double(total) : 0 }
+    }
+
+    /// A dose that needs action right now (due or overdue).
+    struct Attention: Identifiable {
+        let id: UUID
+        let name: String
+        let amount: String
+        let time: Date
+        let isOverdue: Bool
+    }
+
+    enum Tone {
+        case overdue
+        case due
+        case ok
     }
 
     let total: Int
@@ -29,20 +49,20 @@ struct HomeSummary {
     let dueNow: Int
     let laterToday: Int
     let missed: Int
-    /// Distinct medication names needing action (due now or missed), earliest first.
-    let attentionNames: [String]
+    /// Doses needing action (due now or missed), earliest first.
+    let attention: [Attention]
     let days: [Day]
     /// Taken ÷ scheduled for the week so far. `nil` when nothing has been scheduled yet.
     let weekPercent: Int?
 
     init(total: Int, taken: Int, dueNow: Int, laterToday: Int, missed: Int,
-         attentionNames: [String], days: [Day], weekPercent: Int?) {
+         attention: [Attention], days: [Day], weekPercent: Int?) {
         self.total = total
         self.taken = taken
         self.dueNow = dueNow
         self.laterToday = laterToday
         self.missed = missed
-        self.attentionNames = attentionNames
+        self.attention = attention
         self.days = days
         self.weekPercent = weekPercent
     }
@@ -73,7 +93,7 @@ struct HomeSummary {
             .sorted { $0.scheduledDate < $1.scheduledDate }
 
         var taken = 0, dueNow = 0, later = 0, missed = 0
-        var names: [String] = []
+        var items: [Attention] = []
         for dose in today {
             if dose.status == .taken { taken += 1; continue }
             if dose.status == .skipped { continue }
@@ -85,9 +105,13 @@ struct HomeSummary {
                 later += 1
                 continue
             }
-            if let name = dose.medication?.name, !name.isEmpty, !names.contains(name) {
-                names.append(name)
-            }
+            items.append(Attention(
+                id: UUID(),
+                name: dose.medication?.name ?? "Medication",
+                amount: dose.medication?.dosage ?? "",
+                time: dose.scheduledDate,
+                isOverdue: isMissed(dose)
+            ))
         }
 
         // Week strip
@@ -108,7 +132,12 @@ struct HomeSummary {
             } else {
                 state = .complete
             }
-            return Day(date: day, state: state)
+            return Day(
+                date: day,
+                state: state,
+                taken: dayDoses.filter { $0.status == .taken }.count,
+                total: dayDoses.count
+            )
         }
 
         // Week-to-date adherence
@@ -123,7 +152,7 @@ struct HomeSummary {
             dueNow: dueNow,
             laterToday: later,
             missed: missed,
-            attentionNames: names,
+            attention: items,
             days: days,
             weekPercent: percent
         )
@@ -135,37 +164,44 @@ struct HomeSummary {
         total > 0 ? Double(taken) / Double(total) : 0
     }
 
-    /// Medication names that need action, bolded by the card.
-    var attentionNamesText: String? {
-        switch attentionNames.count {
-        case 0: nil
-        case 1: attentionNames[0]
-        case 2: "\(attentionNames[0]) and \(attentionNames[1])"
-        default: "\(attentionNames[0]), \(attentionNames[1]) and \(attentionNames.count - 2) more"
+    var tone: Tone {
+        if attention.contains(where: { !$0.isOverdue }) { return .due }
+        if !attention.isEmpty { return .overdue }
+        return .ok
+    }
+
+    /// Short summary line for the card.
+    var headline: String {
+        let count = attention.count
+        switch tone {
+        case .due:
+            return count == 1 ? "1 dose due now" : "\(count) doses need attention"
+        case .overdue:
+            return count == 1 ? "1 dose overdue" : "\(count) doses overdue"
+        case .ok:
+            if total == 0 { return "No medications scheduled today" }
+            return laterToday > 0 ? "All caught up for now" : "All done for today"
         }
-    }
-
-    var attentionSuffix: String {
-        let verb = attentionNames.count == 1 ? "is" : "are"
-        return dueNow == 0 ? " \(verb) overdue." : " \(verb) due."
-    }
-
-    var idleMessage: String {
-        if total == 0 { return "No medications scheduled today." }
-        if laterToday > 0 { return "All caught up for now." }
-        return "All done for today."
     }
 
     static var preview: HomeSummary {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // Monday-first, like the real summary
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
         let states: [Day.State] = [.complete, .complete, .missed, .complete, .complete, .pending, .upcoming]
+        let totals = [4, 4, 4, 4, 4, 4, 0]
+        let takens = [4, 4, 2, 4, 4, 1, 0]
         let days = states.enumerated().compactMap { index, state in
-            calendar.date(byAdding: .day, value: index, to: weekStart).map { Day(date: $0, state: state) }
+            calendar.date(byAdding: .day, value: index, to: weekStart).map {
+                Day(date: $0, state: state, taken: takens[index], total: totals[index])
+            }
         }
         return HomeSummary(
             total: 4, taken: 1, dueNow: 2, laterToday: 1, missed: 0,
-            attentionNames: ["Trurapi", "Atorvastatin"],
+            attention: [
+                Attention(id: UUID(), name: "Trurapi", amount: "26 units", time: Date().addingTimeInterval(-3600), isOverdue: true),
+                Attention(id: UUID(), name: "Atorvastatin", amount: "20 mg", time: Date().addingTimeInterval(-600), isOverdue: false)
+            ],
             days: days, weekPercent: 82
         )
     }

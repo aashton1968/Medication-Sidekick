@@ -53,12 +53,17 @@ struct HomeView: View {
         .background(alignment: .top) {
             ZStack(alignment: .top) {
                 theme.bgBase
+                // Solid behind the whole hero so its white text stays readable, then fades under the card.
                 LinearGradient(
-                    colors: [theme.accentPrimary, theme.accentPrimary.opacity(0)],
+                    stops: [
+                        .init(color: theme.accentPrimary, location: 0),
+                        .init(color: theme.accentPrimary, location: 0.68),
+                        .init(color: theme.accentPrimary.opacity(0), location: 1)
+                    ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 460)
+                .frame(height: 520)
             }
             .ignoresSafeArea()
         }
