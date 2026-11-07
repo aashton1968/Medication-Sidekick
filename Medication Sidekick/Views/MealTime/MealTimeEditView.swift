@@ -54,7 +54,7 @@ struct MealTimeEditView: View {
             Form {
 
                 Section("Details") {
-                    TextField("Name (e.g. Morning Snack)", text: $name)
+                    TextField("Name (e.g. Mid-morning)", text: $name)
 
                     DatePicker(
                         "Time",
@@ -88,7 +88,7 @@ struct MealTimeEditView: View {
                     .padding(.vertical, 4)
                 }
             }
-            .navigationTitle(isEditing ? "Edit Meal Time" : "New Meal Time")
+            .navigationTitle(isEditing ? "Edit Time of Day" : "New Time of Day")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
 

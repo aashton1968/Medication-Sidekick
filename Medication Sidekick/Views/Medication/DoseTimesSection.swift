@@ -65,7 +65,7 @@ struct DoseTimesSection: View {
         } header: {
             Text("Dose Times")
         } footer: {
-            Text("Pick a meal type for each dose. The time follows that meal's time from Meal Times until you change it here.")
+            Text("Pick a time of day for each dose. The time follows that time of day's setting in Times of Day until you change it here.")
         }
     }
 
@@ -85,7 +85,7 @@ struct DoseTimesSection: View {
             .accessibilityLabel("Remove \(entry.setting.name) dose")
 
             VStack(alignment: .leading, spacing: 2) {
-                Picker("Meal type", selection: mealBinding(for: entry)) {
+                Picker("Time of day", selection: mealBinding(for: entry)) {
                     ForEach(availableMeals(for: entry)) { setting in
                         Label(setting.name, systemImage: setting.symbolName).tag(setting.key)
                     }
@@ -95,7 +95,7 @@ struct DoseTimesSection: View {
                 .fixedSize()
 
                 HStack(spacing: 8) {
-                    Text(isCustom ? "Custom time" : "Follows meal time")
+                    Text(isCustom ? "Custom time" : "Follows \(entry.setting.name)")
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
 

@@ -41,6 +41,18 @@ final class MealTimeSettingSeedService {
                 existing = try context.fetch(FetchDescriptor<MealTimeSetting>())
             }
 
+            // Rename the original defaults in place (keys stay the same, so medications, doses and
+            // history are untouched). Only names still at their old default are renamed, so a name
+            // the user chose is left alone.
+            for setting in existing {
+                if let legacyName = legacyNames[setting.key],
+                   setting.name == legacyName,
+                   let newName = defaults.first(where: { $0.key == setting.key })?.name {
+                    setting.name = newName
+                    hasChanges = true
+                }
+            }
+
             let existingKeys = Set(existing.map(\.key))
             for d in defaults where !existingKeys.contains(d.key) {
                 let setting = MealTimeSetting(
@@ -64,14 +76,21 @@ final class MealTimeSettingSeedService {
         }
     }
 
+    /// What a fresh install gets. The keys of the first four are the original meal keys
+    /// ("breakfast" etc.) so older data keeps working; only the names changed.
+    /// Existing installs keep any Pre-Breakfast / Supper they already have.
     private nonisolated var defaults: [(name: String, key: String, hour: Int, minute: Int, sortOrder: Int, symbol: String)] {
         [
-            ("Pre-Breakfast", "preBreakfast", 6,  30, 0, "clock"),
-            ("Breakfast",     "breakfast",    7,  0,  1, "sunrise"),
-            ("Lunch",         "lunch",        12, 0,  2, "sun.max"),
-            ("Dinner",        "dinner",       18, 30, 3, "sun.haze"),
-            ("Supper",        "supper",       20, 0,  4, "moon.haze"),
-            ("Bed Time",      "bedTime",      22, 30, 5, "moon.zzz"),
+            ("Morning",   "breakfast", 7,  0,  1, "sunrise"),
+            ("Noon",      "lunch",     12, 0,  2, "sun.max"),
+            ("Evening",   "dinner",    18, 30, 3, "sun.haze"),
+            ("Night",     "bedTime",   22, 30, 5, "moon.zzz"),
+            ("As Needed", "asNeeded",  12, 0,  6, "pills"),
         ]
+    }
+
+    /// The previous default names, by key, used to decide whether a name is safe to rename.
+    private nonisolated var legacyNames: [String: String] {
+        ["breakfast": "Breakfast", "lunch": "Lunch", "dinner": "Dinner", "bedTime": "Bed Time"]
     }
 }

@@ -24,9 +24,9 @@ struct MealTimeListView: View {
 
             if mealTimes.isEmpty {
                 ContentUnavailableView(
-                    "No Meal Times",
+                    "No Times of Day",
                     systemImage: "fork.knife",
-                    description: Text("Tap + to add a meal time")
+                    description: Text("Tap + to add a time of day")
                 )
             }
 
@@ -41,7 +41,7 @@ struct MealTimeListView: View {
             }
             .onDelete(perform: delete)
         }
-        .navigationTitle("Meal Times")
+        .navigationTitle("Times of Day")
         .navigationBarTitleDisplayMode(.inline)
 
         .toolbar {
@@ -51,7 +51,7 @@ struct MealTimeListView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .bold))
-                        .accessibilityLabel("Add Meal Time")
+                        .accessibilityLabel("Add Time of Day")
                 }
             }
         }

@@ -2,7 +2,7 @@
 //  MoreView.swift
 //  Medication Sidekick
 //
-//  Replaces the old sliding sidebar: schedules, meal times, settings, help, about.
+//  Replaces the old sliding sidebar: times of day, settings, help, about.
 //
 
 import SwiftUI
@@ -16,7 +16,7 @@ struct MoreView: View {
         List {
             Section {
                 NavigationLink(value: Route.mealTimeSettings) {
-                    Label("Meal Times", systemImage: "fork.knife")
+                    Label("Times of Day", systemImage: "sun.max")
                 }
             }
 
