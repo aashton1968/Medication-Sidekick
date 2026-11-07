@@ -90,12 +90,18 @@ struct MedicationRefillReminderService {
         )
         await removeStaleRefillNotifications(keeping: validIdentifiers)
 
+        var updatedSeverities = plan.updatedSeverities
         for medication in plan.toNotify {
             let request = buildRequest(for: medication, privacyMode: prefs.privacyModeEnabled)
-            try? await add(request)
+            do {
+                try await add(request)
+            } catch {
+                // Leave it un-notified so the next sync retries.
+                updatedSeverities.removeValue(forKey: medication.id.uuidString.lowercased())
+            }
         }
 
-        saveNotifiedLevels(plan.updatedSeverities)
+        saveNotifiedLevels(updatedSeverities)
     }
 
     /// Pure decision of which medications currently need a (re-)fired refill reminder, given

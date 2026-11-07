@@ -32,7 +32,6 @@ struct MedicationEditView: View {
     @State private var doseQuantity: Int = 1
     @State private var stockUnit: StockUnit = .tablets
     @State private var estimatedDailyDoses: Int = 1
-    @State private var followsDeviceTimeZone: Bool = true
 
     // MARK: - Validation
     private var isValid: Bool {
@@ -53,8 +52,7 @@ struct MedicationEditView: View {
         currentStock != medication.currentStock ||
         doseQuantity != medication.doseQuantity ||
         stockUnit != medication.stockUnit ||
-        estimatedDailyDoses != medication.estimatedDailyDoses ||
-        followsDeviceTimeZone != medication.followsDeviceTimeZone
+        estimatedDailyDoses != medication.estimatedDailyDoses
     }
 
     var body: some View {
@@ -118,11 +116,6 @@ struct MedicationEditView: View {
                 Section {
                     Toggle("Active", isOn: $isActive)
                 }
-
-                HomeTimeZoneSection(
-                    followsDeviceTimeZone: $followsDeviceTimeZone,
-                    homeTimeZoneIdentifier: medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier
-                )
             }
             .navigationTitle("Edit Medication")
             .navigationBarTitleDisplayMode(.inline)
@@ -158,7 +151,6 @@ struct MedicationEditView: View {
             doseQuantity = medication.doseQuantity
             stockUnit = medication.stockUnit
             estimatedDailyDoses = medication.estimatedDailyDoses
-            followsDeviceTimeZone = medication.followsDeviceTimeZone
         }
     }
 
@@ -180,16 +172,11 @@ struct MedicationEditView: View {
         medication.stockUnit = stockUnit
         medication.estimatedDailyDoses = estimatedDailyDoses
 
-        let travelModeChanged = followsDeviceTimeZone != medication.followsDeviceTimeZone
-        if followsDeviceTimeZone == false && medication.followsDeviceTimeZone == true {
-            medication.homeTimeZoneIdentifier = TimeZone.current.identifier
-        }
-        medication.followsDeviceTimeZone = followsDeviceTimeZone
         medication.updatedAt = Date()
 
         do {
             try MedicationDoseGenerator.refreshDoses(for: medication, modelContext: modelContext)
-            if travelModeChanged || timesChanged {
+            if timesChanged {
                 try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
             }
         } catch {

@@ -107,6 +107,8 @@ struct MedicationNotificationService {
         await removeAllMedicationNotifications()
 
         for group in limitedGroups {
+            // A newer sync supersedes this one; don't schedule from a stale snapshot.
+            guard !Task.isCancelled else { return }
             let request = buildRequest(
                 for: group,
                 leadTimeMinutes: prefs.leadTimeMinutes,
@@ -150,32 +152,17 @@ struct MedicationNotificationService {
         try await add(request)
     }
 
-    func removeNotifications(for medicationID: UUID) async {
-        let medicationKey = medicationID.uuidString.lowercased()
-        let pending = await pendingNotificationRequests()
-        let matchingPendingIDs = pending
-            .map(\.identifier)
-            .filter { $0.contains(medicationKey) }
-        center.removePendingNotificationRequests(withIdentifiers: matchingPendingIDs)
-
-        let delivered = await deliveredNotifications()
-        let matchingDeliveredIDs = delivered
-            .map(\.request.identifier)
-            .filter { $0.contains(medicationKey) }
-        center.removeDeliveredNotifications(withIdentifiers: matchingDeliveredIDs)
-    }
-
     func removeAllMedicationNotifications() async {
         let pending = await pendingNotificationRequests()
         let pendingIDs = pending
             .map(\.identifier)
-            .filter { $0.hasPrefix(Self.requestPrefix) }
+            .filter { $0.hasPrefix(Self.requestPrefix) && !$0.hasPrefix(Self.testRequestPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: pendingIDs)
 
         let delivered = await deliveredNotifications()
         let deliveredIDs = delivered
             .map(\.request.identifier)
-            .filter { $0.hasPrefix(Self.requestPrefix) }
+            .filter { $0.hasPrefix(Self.requestPrefix) && !$0.hasPrefix(Self.testRequestPrefix) }
         center.removeDeliveredNotifications(withIdentifiers: deliveredIDs)
     }
 
@@ -271,6 +258,9 @@ struct MedicationNotificationService {
 
         let fireDate = group.scheduledDate.addingTimeInterval(TimeInterval(-leadTimeMinutes * 60))
 
+        // Deliberately no timeZone: the trigger is a floating wall-clock time, so a reminder
+        // for 8:00 AM keeps firing at 8:00 AM local even if the phone changes time zone
+        // before the app gets a chance to resync.
         let components = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute, .second],
             from: fireDate

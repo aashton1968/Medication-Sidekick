@@ -139,6 +139,12 @@ struct Medication_SidekickApp: App {
                     .environment(subscriptionService)
                     .environment(themeManager)
                     .modelContainer(container)
+                    .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
+                        retimeForSystemTimeChange(container: container)
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+                        retimeForSystemTimeChange(container: container)
+                    }
             } else {
                 DatabaseUnavailableView()
             }
@@ -157,6 +163,13 @@ struct Medication_SidekickApp: App {
     }
     
     
+    /// Called when the phone's time zone or clock jumps while the app is running.
+    private func retimeForSystemTimeChange(container: ModelContainer) {
+        Task { @MainActor in
+            await AppStartupSequence.retimeDosesForTimeZoneChangeIfNeeded(modelContext: container.mainContext)
+        }
+    }
+
     private static func makeModelContainer(schema: Schema) throws -> ModelContainer {
         let fileManager = FileManager.default
         let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

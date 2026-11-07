@@ -29,7 +29,6 @@ struct MedicationAddView: View {
     @State private var currentStock: Int = 0
     @State private var doseQuantity: Int = 1
     @State private var stockUnit: StockUnit = .tablets
-    @State private var followsDeviceTimeZone: Bool = true
 
     // MARK: - Validation
     private var isValid: Bool {
@@ -95,11 +94,6 @@ struct MedicationAddView: View {
                         }
                     }
                 }
-
-                HomeTimeZoneSection(
-                    followsDeviceTimeZone: $followsDeviceTimeZone,
-                    homeTimeZoneIdentifier: TimeZone.current.identifier
-                )
             }
             .navigationTitle("New Medication")
             .toolbar {
@@ -140,9 +134,7 @@ struct MedicationAddView: View {
             currentStock: currentStock,
             doseQuantity: doseQuantity,
             stockUnit: stockUnit,
-            estimatedDailyDoses: estimatedDailyDoses,
-            followsDeviceTimeZone: followsDeviceTimeZone,
-            homeTimeZoneIdentifier: followsDeviceTimeZone ? nil : TimeZone.current.identifier
+            estimatedDailyDoses: estimatedDailyDoses
         )
         medication.mealsRaw = orderedKeys
         medication.timeOverrides = timeOverrides.filter { orderedKeys.contains($0.key) }

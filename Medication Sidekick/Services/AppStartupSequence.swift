@@ -54,12 +54,26 @@ enum AppStartupSequence {
     /// timezone. Safe to call repeatedly; it's a no-op when nothing is stale.
     @MainActor
     static func retimeDosesForTimeZoneChangeIfNeeded(modelContext: ModelContext) async {
+        // Make sure TimeZone/Calendar.current reflect the phone's latest zone.
+        NSTimeZone.resetSystemTimeZone()
+        let zoneKey = "lastKnownTimeZoneIdentifier"
+        let currentZone = TimeZone.current.identifier
+        let zoneChanged = UserDefaults.standard.string(forKey: zoneKey) != currentZone
+        UserDefaults.standard.set(currentZone, forKey: zoneKey)
+
         do {
             let didChange = try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
-            guard didChange else { return }
-            try modelContext.save()
-            NotificationCenter.default.post(name: .medicationDidChange, object: nil)
-            ToastManager.shared.showGeneral("Medication times updated for \(TimeZone.current.identifier)")
+            if didChange {
+                try modelContext.save()
+            }
+            // Always resync reminders when the zone changed, even if no dose moved
+            // (e.g. same UTC offset), so pending notifications match the new zone.
+            if didChange || zoneChanged {
+                NotificationCenter.default.post(name: .medicationDidChange, object: nil)
+            }
+            if didChange {
+                ToastManager.shared.showGeneral("Medication times updated for \(currentZone)")
+            }
         } catch {
             logger.error("Failed to retime doses for timezone change: \(error.localizedDescription, privacy: .public)")
         }

@@ -2,63 +2,13 @@
 //  MedicationTimeZoneTests.swift
 //  Medication Sidekick Tests
 //
-//  Covers the timezone-sync fix: Medication.schedulingCalendar and
-//  MedicationDoseGenerator.retimeStaleDoses().
+//  Covers the timezone-sync fix: MedicationDoseGenerator.retimeStaleDoses().
 //
 
 import Testing
 import SwiftData
 import Foundation
 @testable import Medication_Sidekick
-
-// MARK: - Medication.schedulingCalendar
-
-@MainActor
-struct MedicationSchedulingCalendarTests {
-
-    @Test func `schedulingCalendar follows device time zone by default`() {
-        let sut = Medication(name: "Amoxicillin", dosage: "500mg")
-        #expect(sut.schedulingCalendar.timeZone == Calendar.current.timeZone)
-    }
-
-    @Test func `schedulingCalendar falls back to device time zone when no home zone is set`() {
-        let sut = Medication(name: "Amoxicillin", dosage: "500mg", followsDeviceTimeZone: false)
-        #expect(sut.homeTimeZoneIdentifier == nil)
-        #expect(sut.schedulingCalendar.timeZone == Calendar.current.timeZone)
-    }
-
-    @Test func `schedulingCalendar falls back to device time zone when the stored identifier is invalid`() {
-        let sut = Medication(
-            name: "Amoxicillin",
-            dosage: "500mg",
-            followsDeviceTimeZone: false,
-            homeTimeZoneIdentifier: "Not/A_Real_Zone"
-        )
-        #expect(sut.schedulingCalendar.timeZone == Calendar.current.timeZone)
-    }
-
-    @Test func `schedulingCalendar pins to the home time zone when device following is off`() {
-        let sut = Medication(
-            name: "Amoxicillin",
-            dosage: "500mg",
-            followsDeviceTimeZone: false,
-            homeTimeZoneIdentifier: "Pacific/Auckland"
-        )
-        #expect(sut.schedulingCalendar.timeZone == TimeZone(identifier: "Pacific/Auckland"))
-    }
-
-    @Test func `schedulingCalendar ignores a stored home zone when still following the device`() {
-        // A home zone can be left behind from a previous "Fixed schedule" period; it should
-        // only take effect once followsDeviceTimeZone is turned off again.
-        let sut = Medication(
-            name: "Amoxicillin",
-            dosage: "500mg",
-            followsDeviceTimeZone: true,
-            homeTimeZoneIdentifier: "Pacific/Auckland"
-        )
-        #expect(sut.schedulingCalendar.timeZone == Calendar.current.timeZone)
-    }
-}
 
 // MARK: - MedicationDoseGenerator.retimeStaleDoses
 
@@ -177,34 +127,6 @@ struct MedicationDoseGeneratorRetimeTests {
         #expect(corrected.minute == 15)
     }
 
-    @Test func `fixed-time-zone medication is retimed against its home zone, not the device zone`() throws {
-        let context = try makeContext()
-        let homeZoneIdentifier = "Pacific/Auckland"
-        let homeZone = TimeZone(identifier: homeZoneIdentifier)!
-        let medication = Medication(
-            name: "Antibiotic",
-            dosage: "250mg",
-            meals: [.breakfast],
-            followsDeviceTimeZone: false,
-            homeTimeZoneIdentifier: homeZoneIdentifier
-        )
-        context.insert(medication)
-
-        // Build "today" under the device's calendar (as generation does) but with a
-        // deliberately wrong hour, so the pass has something to correct.
-        let staleDose = MedicationDose(medication: medication, mealTime: .breakfast, scheduledDate: today(hour: 9, minute: 0))
-        context.insert(staleDose)
-
-        let didChange = try MedicationDoseGenerator.retimeStaleDoses(modelContext: context)
-
-        #expect(didChange == true)
-        var homeCalendar = Calendar.current
-        homeCalendar.timeZone = homeZone
-        let corrected = homeCalendar.dateComponents([.hour, .minute], from: staleDose.scheduledDate)
-        #expect(corrected.hour == 7)
-        #expect(corrected.minute == 0)
-    }
-
     @Test func `ignores a dose whose meal key matches neither a setting nor the MealTime enum`() throws {
         let context = try makeContext()
         let medication = Medication(name: "Vitamin D", dosage: "1000IU", meals: [.breakfast])
@@ -233,5 +155,50 @@ struct MedicationDoseGeneratorRetimeTests {
 
         #expect(didChange == false)
         #expect(dose.scheduledDate == almostCorrectDate)
+    }
+}
+
+// MARK: - AppStartupSequence.retimeDosesForTimeZoneChangeIfNeeded
+
+@MainActor
+struct TimeZoneChangeResyncTests {
+
+    private func makeContext() throws -> ModelContext {
+        let schema = Schema([Medication.self, MedicationDose.self, MealTimeSetting.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        return ModelContext(try ModelContainer(for: schema, configurations: [config]))
+    }
+
+    private final class Counter { var value = 0 }
+
+    @Test func `a changed time zone triggers a notification resync even when no dose moved`() async throws {
+        let context = try makeContext()
+        UserDefaults.standard.set("Pacific/Kiritimati", forKey: "lastKnownTimeZoneIdentifier")
+
+        let counter = Counter()
+        let token = NotificationCenter.default.addObserver(forName: .medicationDidChange, object: nil, queue: nil) { _ in
+            counter.value += 1
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        await AppStartupSequence.retimeDosesForTimeZoneChangeIfNeeded(modelContext: context)
+
+        #expect(counter.value == 1)
+        #expect(UserDefaults.standard.string(forKey: "lastKnownTimeZoneIdentifier") == TimeZone.current.identifier)
+    }
+
+    @Test func `an unchanged time zone with nothing stale does not trigger a resync`() async throws {
+        let context = try makeContext()
+        UserDefaults.standard.set(TimeZone.current.identifier, forKey: "lastKnownTimeZoneIdentifier")
+
+        let counter = Counter()
+        let token = NotificationCenter.default.addObserver(forName: .medicationDidChange, object: nil, queue: nil) { _ in
+            counter.value += 1
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        await AppStartupSequence.retimeDosesForTimeZoneChangeIfNeeded(modelContext: context)
+
+        #expect(counter.value == 0)
     }
 }

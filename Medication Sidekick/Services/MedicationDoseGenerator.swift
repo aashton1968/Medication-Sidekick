@@ -36,7 +36,9 @@ struct MedicationDoseGenerator {
         var deletedIDs = Set<ObjectIdentifier>()
 
         for dose in dosesFromToday {
-            let shouldRemove = !medication.isActive || !currentMealKeys.contains(dose.mealTimeRaw)
+            let shouldRemove = !medication.isActive
+                || medication.frequency == .asNeeded
+                || !currentMealKeys.contains(dose.mealTimeRaw)
             // Keep taken doses as historical records, but reconcile all other statuses
             // so today's schedule reflects meal-slot edits immediately.
             if shouldRemove && dose.status != .taken {
@@ -47,7 +49,7 @@ struct MedicationDoseGenerator {
 
         let remainingDoses = allDoses.filter { !deletedIDs.contains(ObjectIdentifier($0)) }
 
-        if medication.isActive && !medication.mealsRaw.isEmpty {
+        if medication.isActive && medication.frequency != .asNeeded && !medication.mealsRaw.isEmpty {
             try generateUpcomingDoses(
                 for: medication,
                 existingDoses: remainingDoses,
@@ -69,13 +71,9 @@ struct MedicationDoseGenerator {
     }
 
     /// Corrects the clock time of not-yet-occurred doses whose stored time-of-day no longer
-    /// matches their medication's meal setting under the medication's current scheduling
-    /// calendar. This is what re-syncs schedules after the device's timezone changes:
-    ///
-    /// - `followsDeviceTimeZone` medications recompute against `Calendar.current`, so a dose
-    ///   generated as "8am" while at home is corrected to "8am" in the new local timezone.
-    /// - Medications anchored to a fixed `homeTimeZoneIdentifier` recompute against that same
-    ///   fixed zone every time, so this pass is a no-op for them regardless of device travel.
+    /// matches their medication's meal setting. This is what re-syncs schedules after the
+    /// device's timezone changes: a dose generated as "8am" while at home is corrected to
+    /// "8am" in the new local timezone.
     ///
     /// Only `scheduled` doses are touched — taken/skipped/missed doses are historical records
     /// and are left as-is. Does NOT save — the caller is responsible for saving.
@@ -106,7 +104,7 @@ struct MedicationDoseGenerator {
             components.minute = time.minute
             components.second = 0
 
-            guard let correctedDate = medication.schedulingCalendar.date(from: components) else { continue }
+            guard let correctedDate = deviceCalendar.date(from: components) else { continue }
             guard abs(correctedDate.timeIntervalSince(dose.scheduledDate)) >= 60 else { continue }
 
             dose.scheduledDate = correctedDate
@@ -124,8 +122,10 @@ struct MedicationDoseGenerator {
         calendar: Calendar
     ) -> Bool {
         switch medication.frequency {
-        case .daily, .asNeeded:
+        case .daily:
             return true
+        case .asNeeded:
+            return false
         case .everyOtherDay:
             let startDay = calendar.startOfDay(for: medication.startDate)
             let daysDiff = calendar.dateComponents([.day], from: startDay, to: day).day ?? 0
@@ -155,17 +155,15 @@ struct MedicationDoseGenerator {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        guard !medication.mealsRaw.isEmpty else { return }
+        // As-needed medications have no fixed schedule, so they never get scheduled doses.
+        guard medication.frequency != .asNeeded, !medication.mealsRaw.isEmpty else { return }
 
         var allDoses = try existingDoses ?? modelContext.fetch(FetchDescriptor<MedicationDose>())
         let settings = try modelContext.fetch(FetchDescriptor<MealTimeSetting>())
         let settingsByKey = Dictionary(settings.map { ($0.key, $0) }, uniquingKeysWith: { _, latest in latest })
         let uniqueMealKeys = Array(Set(medication.mealsRaw))
-        // Day iteration always uses the device's current calendar (so "the next 7 days"
-        // means 7 local days), but the final time-of-day is resolved with the medication's
-        // own scheduling calendar so timezone-anchored medications keep their fixed clock time.
-        let schedulingCalendar = medication.schedulingCalendar
-
+        // Day iteration and time-of-day both use the device's current calendar, so "8am"
+        // always means 8am local time.
         for dayOffset in 0..<daysAhead {
 
             guard let day = calendar.date(
@@ -192,7 +190,7 @@ struct MedicationDoseGenerator {
                 components.minute = time.minute
                 components.second = 0
 
-                guard let scheduledDate = schedulingCalendar.date(from: components) else {
+                guard let scheduledDate = calendar.date(from: components) else {
                     continue
                 }
 

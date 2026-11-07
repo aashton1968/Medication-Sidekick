@@ -26,7 +26,6 @@ struct MedicationEditScheduleSheet: View {
     @State private var selectedWeekdays: Set<Int> = []
     @State private var isActive: Bool = true
     @State private var estimatedDailyDoses: Int = 1
-    @State private var followsDeviceTimeZone: Bool = true
 
     private static let weekdayNames: [(Int, String)] = [
         (2, "Monday"), (3, "Tuesday"), (4, "Wednesday"),
@@ -45,8 +44,7 @@ struct MedicationEditScheduleSheet: View {
         timeOverrides != medication.timeOverrides ||
         selectedWeekdays != medication.scheduledWeekdays ||
         isActive != medication.isActive ||
-        estimatedDailyDoses != medication.estimatedDailyDoses ||
-        followsDeviceTimeZone != medication.followsDeviceTimeZone
+        estimatedDailyDoses != medication.estimatedDailyDoses
     }
 
     var body: some View {
@@ -103,11 +101,6 @@ struct MedicationEditScheduleSheet: View {
                 Section {
                     Toggle("Active", isOn: $isActive)
                 }
-
-                HomeTimeZoneSection(
-                    followsDeviceTimeZone: $followsDeviceTimeZone,
-                    homeTimeZoneIdentifier: medication.homeTimeZoneIdentifier ?? TimeZone.current.identifier
-                )
             }
             .navigationTitle("Edit Schedule")
             .navigationBarTitleDisplayMode(.inline)
@@ -128,7 +121,6 @@ struct MedicationEditScheduleSheet: View {
             selectedWeekdays = medication.scheduledWeekdays
             isActive = medication.isActive
             estimatedDailyDoses = medication.estimatedDailyDoses
-            followsDeviceTimeZone = medication.followsDeviceTimeZone
         }
     }
 
@@ -143,19 +135,13 @@ struct MedicationEditScheduleSheet: View {
         medication.isActive = isActive
         medication.estimatedDailyDoses = estimatedDailyDoses
 
-        let travelModeChanged = followsDeviceTimeZone != medication.followsDeviceTimeZone
-        if followsDeviceTimeZone == false && medication.followsDeviceTimeZone == true {
-            // Capture "home" as wherever the user is right now, the moment travel-adjustment is turned off.
-            medication.homeTimeZoneIdentifier = TimeZone.current.identifier
-        }
-        medication.followsDeviceTimeZone = followsDeviceTimeZone
         medication.updatedAt = Date()
 
         do {
             try MedicationDoseGenerator.refreshDoses(for: medication, modelContext: modelContext)
-            // Turning travel-adjustment on/off doesn't add or remove any dose rows, so the gap-filling
+            // Changing a dose time doesn't add or remove any dose rows, so the gap-filling
             // refresh above won't retime already-existing future doses — force that explicitly.
-            if travelModeChanged || timesChanged {
+            if timesChanged {
                 try MedicationDoseGenerator.retimeStaleDoses(modelContext: modelContext)
             }
         } catch {

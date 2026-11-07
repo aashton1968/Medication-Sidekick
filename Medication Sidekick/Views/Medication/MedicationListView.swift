@@ -274,12 +274,6 @@ struct MedicationRow: View {
                         .font(.caption)
                         .foregroundStyle(themeManager.selectedTheme.textSecondary)
                 }
-
-                if !medication.followsDeviceTimeZone {
-                    Label("Keeps home time zone", systemImage: "airplane")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                }
             }
 
             Spacer()
