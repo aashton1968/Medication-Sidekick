@@ -9,7 +9,7 @@ import SwiftUI
 
 /// Top-level tabs shown in the tab bar.
 enum AppTab: Hashable {
-    case today
+    case home
     case medicines
     case more
 }
@@ -18,18 +18,17 @@ enum AppTab: Hashable {
 /// screen never replaces the tab bar. `navigate(_:)` picks the right tab for a route.
 @Observable
 final class NavigationRouter {
-    var selectedTab: AppTab = .today
-    var todayPath = NavigationPath()
+    var selectedTab: AppTab = .home
+    var homePath = NavigationPath()
     var medicinesPath = NavigationPath()
     var morePath = NavigationPath()
     var currentRoute: Route? = .home
 
     func navigate(_ route: Route) {
         switch route {
-        case .home, .todayView:
-            // Today has been rolled into Home.
-            selectedTab = .today
-            todayPath = NavigationPath()
+        case .home:
+            selectedTab = .home
+            homePath = NavigationPath()
         case .medications:
             selectedTab = .medicines
             medicinesPath = NavigationPath()
@@ -44,10 +43,10 @@ final class NavigationRouter {
     }
 
     func reset() {
-        todayPath = NavigationPath()
+        homePath = NavigationPath()
         medicinesPath = NavigationPath()
         morePath = NavigationPath()
-        selectedTab = .today
+        selectedTab = .home
         currentRoute = .home
     }
 }
@@ -56,7 +55,6 @@ final class NavigationRouter {
 // Navigation Route
 enum Route: Hashable {
     case home
-    case todayView
     case medications
     case medication(id: UUID)
     case medicationNew

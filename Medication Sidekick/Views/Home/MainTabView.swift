@@ -63,8 +63,8 @@ private struct MainTabContent: View {
     var body: some View {
         @Bindable var router = navigationRouter
         TabView(selection: $router.selectedTab) {
-            Tab("Today", systemImage: "circle.circle.fill", value: AppTab.today) {
-                NavigationStack(path: $router.todayPath) {
+            Tab("Home", systemImage: "house.fill", value: AppTab.home) {
+                NavigationStack(path: $router.homePath) {
                     HomeView()
                         .routeDestinations()
                 }
@@ -101,7 +101,7 @@ private struct MainTabContent: View {
             await syncMedicationNotifications()
 
             if AppNotificationDelegate.consumePendingMedicationReminderOpen() {
-                navigationRouter.navigate(.todayView)
+                navigationRouter.navigate(.home)
             }
             if AppNotificationDelegate.consumePendingRefillReminderOpen() {
                 navigationRouter.navigate(.medications)
@@ -114,7 +114,7 @@ private struct MainTabContent: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .medicationReminderOpened)) { _ in
-            navigationRouter.navigate(.todayView)
+            navigationRouter.navigate(.home)
         }
         .onReceive(NotificationCenter.default.publisher(for: .medicationRefillReminderOpened)) { _ in
             navigationRouter.navigate(.medications)

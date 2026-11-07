@@ -24,7 +24,7 @@ private struct RouteDestinationsModifier: ViewModifier {
     @ViewBuilder
     private func destination(for route: Route) -> some View {
         switch route {
-        case .home, .todayView:
+        case .home:
             EmptyView()
         case .medications:
             MedicationListView()

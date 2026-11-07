@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 import os.log
 
-/// Content of the Today tab: hero, week card (also the day picker) and the selected day's doses.
+/// Content of the Home tab: hero, week card (also the day picker) and the selected day's doses.
 /// Lives inside the tab's NavigationStack (see MainTabView).
 struct HomeView: View {
 
@@ -53,16 +53,21 @@ struct HomeView: View {
         .background(alignment: .top) {
             ZStack(alignment: .top) {
                 theme.bgBase
+                // Stays saturated behind the ring so its arcs keep contrast, then fades out under the card.
                 LinearGradient(
-                    colors: [theme.accentPrimary, theme.accentPrimary.opacity(0)],
+                    stops: [
+                        .init(color: theme.accentPrimary, location: 0),
+                        .init(color: theme.accentPrimary, location: 0.68),
+                        .init(color: theme.accentPrimary.opacity(0), location: 1)
+                    ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 460)
+                .frame(height: 520)
             }
             .ignoresSafeArea()
         }
-        .navigationTitle("Today")
+        .navigationTitle("Home")
         .navigationBarTitleDisplayMode(.inline)
         // Let the hero gradient run up behind the bar instead of a separate tinted band.
         .toolbarBackground(.hidden, for: .navigationBar)
