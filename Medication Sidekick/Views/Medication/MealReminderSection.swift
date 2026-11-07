@@ -25,62 +25,47 @@ struct MealReminderSection: View {
         Section {
             ForEach(mealTimeSettings) { setting in
                 mealRow(setting)
-
-                if selectedMealKeys.contains(setting.key) {
-                    reminderRow(setting)
-                }
             }
         } header: {
             Text("Meal Type & Reminder")
         } footer: {
-            Text("Each reminder follows its meal's time from Meal Times. Change a time to set your own for this medication.")
+            Text("Tick the meals this medication is taken with. Each reminder follows its meal's time from Meal Times. Change a time to set your own for this medication.")
         }
     }
 
-    // MARK: - Rows
+    // MARK: - Row
 
+    /// One row per meal: meal name, its reminder time (editable), and a tick.
+    /// Changing the time also ticks the meal, since choosing a time implies you want it.
     private func mealRow(_ setting: MealTimeSetting) -> some View {
         let isSelected = selectedMealKeys.contains(setting.key)
-
-        return Button {
-            toggle(setting.key)
-        } label: {
-            HStack {
-                Image(systemName: setting.symbolName)
-                    .frame(width: 24)
-                    .foregroundStyle(.tint)
-
-                Text(setting.name)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                // Selected meals show their editable reminder row underneath instead.
-                if !isSelected {
-                    Text(setting.displayTime)
-                        .font(.caption)
-                        .foregroundStyle(theme.textSecondary)
-                }
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(theme.textSecondary))
-            }
-        }
-    }
-
-    private func reminderRow(_ setting: MealTimeSetting) -> some View {
         let isCustom = timeOverrides[setting.key] != nil
 
-        return HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Reminder")
-                    .font(.subheadline)
-                Text(isCustom ? "Custom time" : "Follows \(setting.name)")
-                    .font(.caption)
-                    .foregroundStyle(theme.textSecondary)
-            }
+        return HStack(spacing: 10) {
+            Button {
+                toggle(setting.key)
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: setting.symbolName)
+                        .frame(width: 24)
+                        .foregroundStyle(.tint)
 
-            Spacer()
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(setting.name)
+                            .foregroundStyle(.primary)
+
+                        if isSelected {
+                            Text(isCustom ? "Custom time" : "Follows meal time")
+                                .font(.caption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+
+            Spacer(minLength: 4)
 
             if isCustom {
                 Button("Reset") {
@@ -91,13 +76,22 @@ struct MealReminderSection: View {
             }
 
             DatePicker(
-                "Reminder time",
+                "\(setting.name) reminder time",
                 selection: timeBinding(for: setting),
                 displayedComponents: .hourAndMinute
             )
             .labelsHidden()
+            .opacity(isSelected ? 1 : 0.55)
+
+            Button {
+                toggle(setting.key)
+            } label: {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(theme.textSecondary))
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(isSelected ? "Remove \(setting.name)" : "Add \(setting.name)")
         }
-        .padding(.leading, 36) // lines up under the meal name
     }
 
     // MARK: - Helpers
@@ -121,6 +115,7 @@ struct MealReminderSection: View {
             },
             set: { newValue in
                 let time = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                selectedMealKeys.insert(setting.key)
                 if time.hour == setting.hour && time.minute == setting.minute {
                     timeOverrides[setting.key] = nil
                 } else {
