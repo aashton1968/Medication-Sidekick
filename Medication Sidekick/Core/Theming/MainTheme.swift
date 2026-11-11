@@ -40,7 +40,7 @@ struct Main: ThemeProtocol {
     var statusError: Color {
         Color(UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(red: 1.0, green: 0.42, blue: 0.40, alpha: 1)   // #FF6B66
+                ? UIColor(red: 1.0, green: 0.541, blue: 0.502, alpha: 1)  // #FF8A80
                 : UIColor(red: 0.70, green: 0.0, blue: 0.0, alpha: 1)    // #B30000
         })
     }
