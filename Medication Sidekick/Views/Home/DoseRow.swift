@@ -77,15 +77,16 @@ struct DoseRow: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// The medication's type icon in a tinted tile, with a status badge on its corner once handled.
+    /// The medication's type icon in a neutral tile, with a status badge on its corner once handled.
+    /// Neutral rather than accent-tinted so colour on the row is reserved for taken/status state.
     private var medicationIcon: some View {
         Image(systemName: dose.medication?.medicationType.symbolName ?? "pill.fill")
             .font(.system(size: 22, weight: .semibold))
-            .foregroundStyle(theme.accentTint)
+            .foregroundStyle(theme.textSecondary)
             .frame(width: 48, height: 48)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(theme.accentTint.opacity(0.12))
+                    .fill(theme.textSecondary.opacity(0.12))
             )
             .overlay(alignment: .bottomTrailing) {
                 if dose.status != .scheduled {
@@ -118,7 +119,7 @@ struct DoseRow: View {
 
                     Text(dose.mealDisplayName(settings: mealTimeSettings))
                         .font(.system(.callout, design: .rounded, weight: .bold))
-                        .foregroundStyle(theme.accentTint)
+                        .foregroundStyle(theme.textSecondary)
                 }
 
                 Spacer(minLength: 8)
@@ -180,15 +181,13 @@ struct DoseRow: View {
 
     /// Right-hand side: the due time (or the time it was taken) and a small status line.
     private var trailing: some View {
-        VStack(alignment: .trailing, spacing: 3) {
+        VStack(alignment: .trailing, spacing: 6) {
             switch dose.status {
             case .taken:
                 Text(dose.takenTime ?? dose.scheduledDate, style: .time)
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(theme.textPrimary)
-                Text("Taken")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(theme.statusSuccess)
+                takenButton
             case .skipped:
                 Text(dose.scheduledDate, style: .time)
                     .font(.subheadline.weight(.semibold).monospacedDigit())
@@ -205,8 +204,33 @@ struct DoseRow: View {
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(theme.statusError)
                 }
+                takenButton
             }
         }
+    }
+
+    /// Explicit, tappable restatement of the row's taken state — on top of the whole-row
+    /// tap and swipe actions, so the toggle is discoverable without relying on either.
+    private var takenButton: some View {
+        let isTaken = dose.status == .taken
+        return Button(action: toggle) {
+            HStack(spacing: 4) {
+                Image(systemName: isTaken ? "checkmark.circle.fill" : "circle")
+                Text(isTaken ? "Taken" : "Mark Taken")
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(isTaken ? theme.statusSuccess : theme.accentTint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule().fill((isTaken ? theme.statusSuccess : theme.accentTint).opacity(0.12))
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isToggling)
+        .accessibilityLabel(isTaken
+            ? "Undo \(dose.medication?.name ?? "dose") taken"
+            : "Mark \(dose.medication?.name ?? "dose") as taken")
     }
 
     private func toggle() {

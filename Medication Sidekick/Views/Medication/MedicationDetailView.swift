@@ -150,32 +150,44 @@ struct MedicationDetailView: View {
 
                             Spacer()
 
-                            Image(systemName: medication.stockLevel.symbolName)
-                                .foregroundStyle(stockLevelColor(medication.stockLevel))
+                            if medication.tracksStock {
+                                Image(systemName: medication.stockLevel.symbolName)
+                                    .foregroundStyle(stockLevelColor(medication.stockLevel))
 
-                            Text(medication.stockLevel.displayName)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(stockLevelColor(medication.stockLevel))
+                                Text(medication.stockLevel.displayName)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(stockLevelColor(medication.stockLevel))
+                            } else {
+                                Text("Not Tracked")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(themeManager.selectedTheme.textSecondary)
+                            }
                         }
 
-                        HStack(spacing: 6) {
-                            Image(systemName: medication.medicationType.symbolName)
-                                .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                                .font(.subheadline)
+                        if medication.tracksStock {
+                            HStack(spacing: 6) {
+                                Image(systemName: medication.medicationType.symbolName)
+                                    .foregroundStyle(themeManager.selectedTheme.textSecondary)
+                                    .font(.subheadline)
 
-                            Text("\(medication.currentStock) \(medication.stockUnit.displayName)")
-                                .font(.subheadline)
-                                .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                        }
+                                Text("\(medication.currentStock) \(medication.stockUnit.displayName)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(themeManager.selectedTheme.textSecondary)
+                            }
 
-                        if medication.currentStock > 0 {
-                            Text("~\(medication.daysOfSupply) days supply")
-                                .font(.caption)
-                                .foregroundStyle(themeManager.selectedTheme.textSecondary)
-                        }
+                            if medication.currentStock > 0 {
+                                Text("~\(medication.daysOfSupply) days supply")
+                                    .font(.caption)
+                                    .foregroundStyle(themeManager.selectedTheme.textSecondary)
+                            }
 
-                        if medication.doseQuantity > 1 {
-                            Text("\(medication.doseQuantity) \(medication.stockUnit.displayName.lowercased()) per dose")
+                            if medication.doseQuantity > 1 {
+                                Text("\(medication.doseQuantity) \(medication.stockUnit.displayName.lowercased()) per dose")
+                                    .font(.caption)
+                                    .foregroundStyle(themeManager.selectedTheme.textSecondary)
+                            }
+                        } else {
+                            Text("Dose varies each time — just logging whether it was taken.")
                                 .font(.caption)
                                 .foregroundStyle(themeManager.selectedTheme.textSecondary)
                         }

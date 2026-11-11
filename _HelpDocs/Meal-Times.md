@@ -1,28 +1,21 @@
-Meal Times lets you manage meal-based timing used by medication schedules.
+Schedule Times lets you manage the meal-based timing used by medication schedules.
 
 ## Quick Steps
 
-1. Open Meal Times to review your current routine.
+1. Open Schedule Times from the More tab to review your current routine.
 2. Edit any meal time that has changed.
 3. Recheck affected medication schedules.
 
-## Meal Time List
+## Schedule Times List
 
-![Image](MS_IPH_MealtimeListView)
+![Image](MS_IPH_MoreScheduleTimeListView)
 
 Review all configured meal times in one place.
 
-## Edit Meal Time
-
-![Image](MS_IPH_MealtimeEditView)
+## Edit a Schedule Time
 
 Adjust meal labels and times as your routine changes.
 
 ## Tip
 
-After changing a meal time, verify the Today view so expected doses still line up correctly.
-
-## Navigation
-
-- Previous: [Medications](04-Medications.md)
-- Next: [Settings](06-Settings.md)
+After changing a meal time, check the Home screen's dose list so expected doses still line up correctly.

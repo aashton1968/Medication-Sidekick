@@ -41,7 +41,7 @@ struct MealTimeListView: View {
             }
             .onDelete(perform: delete)
         }
-        .navigationTitle("Times of Day")
+        .navigationTitle("Schedule Times")
         .navigationBarTitleDisplayMode(.inline)
 
         .toolbar {

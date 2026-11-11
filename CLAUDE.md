@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Source control model
+
+This project has a single developer who works across two machines; the project folder itself is synced between them (not via git). That means the on-disk working tree is always the correct, current state of the project, independent of git history on either machine. Git is used because the developer likes doing things "the correct way," not because it's relied on for backup or coordination between machines — so if local git history and `origin/main` ever diverge or disagree, trust the working tree contents over either commit history, confirm with the developer before any destructive git operation (force-push, reset, rebase) that would reconcile the two, and don't assume a divergent/rewritten remote history means something is wrong with the local files.
+
 ## Build & Run
 
 This is an iOS app built with Xcode. There are no test targets.
@@ -79,3 +83,5 @@ Help content is Markdown files in `_HelpDocs/`. They are bundled into the app an
 ### CloudKit Considerations
 
 The SwiftData container uses `.cloudKitDatabase: .automatic`. CloudKit sync can create duplicate records on first install or multi-device scenarios. The three reconcile passes in `MedicationSeedService` handle this — they use identity signatures to find and merge duplicates, preserving the record with the most history.
+
+**DEBUG and Release builds never share a local store file.** Same bundle ID for both, so without this an Xcode run could open the Release build's on-disk store while syncing to a different CloudKit environment (Development vs. Production) — see the user-level `CLAUDE.md` principle, and Financial Sidekick's own fix for the incident that motivated it. The split lives in `makeModelContainer(schema:)` in `Medication_SidekickApp.swift`: DEBUG builds use the store name `MedicationSidekick-dev`; Release builds use `MedicationSidekick`. `cloudKitDatabase: .automatic` is unchanged — environment selection is still driven by provisioning/signing, not by this name. Keep this split when touching that container-setup code.

@@ -168,8 +168,12 @@ struct MedicationListView: View {
         lines.append(String(repeating: "─", count: 40))
 
         for med in sortedMedications {
-            let unit = med.stockUnit.displayName.lowercased()
-            let qty = "\(med.doseQuantity) \(unit)/dose"
+            let qty: String
+            if med.tracksStock {
+                qty = "\(med.doseQuantity) \(med.stockUnit.displayName.lowercased())/dose"
+            } else {
+                qty = "varies"
+            }
             lines.append("\(med.name)\t\(med.dosage)\t\(qty)\t\(med.frequency.displayName)")
         }
 
@@ -278,9 +282,11 @@ struct MedicationRow: View {
 
             Spacer()
 
-            Image(systemName: medication.stockLevel.symbolName)
-                .foregroundStyle(stockLevelColor(medication.stockLevel))
-                .font(.system(size: 14))
+            if medication.tracksStock {
+                Image(systemName: medication.stockLevel.symbolName)
+                    .foregroundStyle(stockLevelColor(medication.stockLevel))
+                    .font(.system(size: 14))
+            }
         }
         .padding(.vertical, 4)
     }
@@ -325,7 +331,7 @@ struct MedicationShareView: View {
                     GridRow {
                         Text(med.name)
                         Text(med.dosage)
-                        Text("\(med.doseQuantity) \(med.stockUnit.displayName.lowercased())")
+                        Text(med.tracksStock ? "\(med.doseQuantity) \(med.stockUnit.displayName.lowercased())" : "varies")
                         Text(med.frequency.displayName)
                     }
                     .font(.subheadline)

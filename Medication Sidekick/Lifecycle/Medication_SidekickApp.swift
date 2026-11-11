@@ -170,13 +170,25 @@ struct Medication_SidekickApp: App {
         }
     }
 
+    // DEBUG builds and the Release/TestFlight/App Store build share the same bundle ID, so
+    // without separate store names an Xcode run would open the same on-disk store the Release
+    // build uses while syncing to a different CloudKit environment (Development vs. Production)
+    // — a stray debug run could pull Development data into a Production-synced store. Only the
+    // filename differs; CloudKit environment selection is still `.automatic`, driven by
+    // provisioning/signing as before, not by this name.
+    #if DEBUG
+    private static let storeName = "MedicationSidekick-dev"
+    #else
+    private static let storeName = "MedicationSidekick"
+    #endif
+
     private static func makeModelContainer(schema: Schema) throws -> ModelContainer {
         let fileManager = FileManager.default
         let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        let storeURL = appSupportURL.appendingPathComponent("MedicationSidekick.store")
+        let storeURL = appSupportURL.appendingPathComponent("\(storeName).store")
         let config = ModelConfiguration(
-            "MedicationSidekick",
+            storeName,
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true,

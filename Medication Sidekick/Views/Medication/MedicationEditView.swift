@@ -28,6 +28,7 @@ struct MedicationEditView: View {
     @State private var frequency: MedicationFrequency = .daily
     @State private var isActive: Bool = true
     @State private var medicationType: MedicationType = .tablet
+    @State private var tracksStock: Bool = true
     @State private var currentStock: Int = 0
     @State private var doseQuantity: Int = 1
     @State private var stockUnit: StockUnit = .tablets
@@ -49,6 +50,7 @@ struct MedicationEditView: View {
         frequency != medication.frequency ||
         isActive != medication.isActive ||
         medicationType != medication.medicationType ||
+        tracksStock != medication.tracksStock ||
         currentStock != medication.currentStock ||
         doseQuantity != medication.doseQuantity ||
         stockUnit != medication.stockUnit ||
@@ -94,15 +96,25 @@ struct MedicationEditView: View {
                     )
                 }
 
-                Section("Stock") {
-                    StockQuantityRow(stock: $currentStock)
+                Section {
+                    Toggle("Track Stock", isOn: $tracksStock)
 
-                    Stepper("Per dose: \(doseQuantity)", value: $doseQuantity, in: 1...10)
+                    if tracksStock {
+                        StockQuantityRow(stock: $currentStock)
 
-                    Picker("Unit", selection: $stockUnit) {
-                        ForEach(StockUnit.allCases, id: \.self) { unit in
-                            Text(unit.displayName).tag(unit)
+                        Stepper("Per dose: \(doseQuantity)", value: $doseQuantity, in: 1...10)
+
+                        Picker("Unit", selection: $stockUnit) {
+                            ForEach(StockUnit.allCases, id: \.self) { unit in
+                                Text(unit.displayName).tag(unit)
+                            }
                         }
+                    }
+                } header: {
+                    Text("Stock")
+                } footer: {
+                    if !tracksStock {
+                        Text("Use this for medications like insulin where the dose varies each time and isn't a fixed quantity to subtract from a running stock count.")
                     }
                 }
 
@@ -140,6 +152,7 @@ struct MedicationEditView: View {
             frequency = medication.frequency
             isActive = medication.isActive
             medicationType = medication.medicationType
+            tracksStock = medication.tracksStock
             currentStock = medication.currentStock
             doseQuantity = medication.doseQuantity
             stockUnit = medication.stockUnit
@@ -160,6 +173,7 @@ struct MedicationEditView: View {
         medication.frequency = frequency
         medication.isActive = isActive
         medication.medicationType = medicationType
+        medication.tracksStock = tracksStock
         medication.currentStock = currentStock
         medication.doseQuantity = doseQuantity
         medication.stockUnit = stockUnit

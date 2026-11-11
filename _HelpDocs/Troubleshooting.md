@@ -10,7 +10,7 @@ Use this page for common issues and quick fixes.
 
 1. Confirm notification permissions are enabled in iOS settings.
 2. Verify schedule times are configured correctly.
-3. Reopen the app and check Today and Medications for expected doses.
+3. Reopen the app and check Home and Medications for expected doses.
 
 ## Dose times look wrong
 
@@ -24,13 +24,3 @@ Use this page for common issues and quick fixes.
 2. Confirm stock and timing details are saved.
 3. Reopen relevant views to refresh.
 
-## Troubleshooting Screenshot
-
-![Image](MS_IPH_Troubleshooting_Notifications)
-
-Create and add this screenshot if you want a dedicated troubleshooting image.
-
-## Navigation
-
-- Previous: [FAQ](07-FAQ.md)
-- Next: [Help Home](README.md)

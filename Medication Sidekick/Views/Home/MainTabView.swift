@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 import os.log
 
 struct MainTabView: View {
@@ -53,6 +54,11 @@ private struct MainTabContent: View {
         DosePillState(doses: todayDoses, now: now)
     }
 
+    /// On iPad the tab bar floats at the top, over Home's dark teal hero band, where the
+    /// system's default (dark) label color is low-contrast — force light labels there only.
+    /// On iPhone the bar sits at the bottom over lighter content, so leave it adaptive.
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
     @State private var showingInitialSubscriptionPrompt = false
     @AppStorage(AppStorageKeys.hasShownInitialSubscriptionPrompt.rawValue)
     private var hasShownInitialSubscriptionPrompt: Bool = false
@@ -70,7 +76,7 @@ private struct MainTabContent: View {
                 }
             }
 
-            Tab("Medicines", systemImage: "pills.fill", value: AppTab.medicines) {
+            Tab("Medications", systemImage: "pills.fill", value: AppTab.medicines) {
                 NavigationStack(path: $router.medicinesPath) {
                     MedicationListView()
                         .routeDestinations()
@@ -85,6 +91,10 @@ private struct MainTabContent: View {
             }
         }
         .tint(themeManager.selectedTheme.accentTint)
+        .toolbarColorScheme(isPad ? .dark : nil, for: .tabBar)
+        // Without this, the tab bar (and the accessory beside it) never minimizes, so
+        // `tabViewBottomAccessoryPlacement` stays `.expanded` no matter how content scrolls.
+        .tabBarMinimizeBehavior(.onScrollDown)
         .dosePillAccessory(pillState)
         .sheet(isPresented: $showingInitialSubscriptionPrompt) {
             PaywallView()

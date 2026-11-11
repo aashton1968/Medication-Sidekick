@@ -1,6 +1,6 @@
 //
 //  HelpListView.swift
-//  Diabetic Sidekick
+//  Medication Sidekick
 //
 //  Created by Alan Ashton on 2026-01-03.
 //
@@ -23,18 +23,18 @@ struct HelpListView: View {
                 HStack(spacing: 14) {
                     Image(systemName: "book.fill")
                         .font(.title3)
-                        .foregroundStyle(themeManager.selectedTheme.textPrimary)
+                        .foregroundStyle(themeManager.selectedTheme.accentTint)
 
                     Text(page.title)
                         .font(.headline)
                         .foregroundStyle(themeManager.selectedTheme.textPrimary)
 
                     Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(themeManager.selectedTheme.textSecondary)
                 }
                 .padding(.vertical, 8)
+                // Without this, taps on the Spacer's empty space (most of the row) don't
+                // register — only the icon and text glyphs count as tappable by default.
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }

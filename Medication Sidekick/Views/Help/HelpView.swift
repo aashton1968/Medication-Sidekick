@@ -1,13 +1,9 @@
 //
 //  HelpView.swift
-//  Diabetic Sidekick
+//  Medication Sidekick
 //
 //  Created by Alan Ashton on 2026-01-03.
 //
-
-import SwiftUI
-import MarkdownUI
-import UIKit
 
 import SwiftUI
 import MarkdownUI

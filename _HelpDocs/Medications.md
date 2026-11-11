@@ -25,11 +25,11 @@ Open a medication to review its details, schedule, and stock.
 
 Use the edit view to update name, dosage, and timing details.
 
-## Schedule View
+## Edit Schedule
 
-![Image](MS_IPH_MedicationScheduleView)
+![Image](MS_IPH_MedicationScheduleEditView)
 
-This view helps you configure and confirm timing rules.
+Set the frequency and dose times, and turn the medication on or off here.
 
 ## Schedule List View
 
@@ -37,13 +37,8 @@ This view helps you configure and confirm timing rules.
 
 Use this list to review all schedule entries in one place.
 
-## Stock View
+## Edit Stock
 
 ![Image](MS_IPH_MedicationStockView)
 
-Track inventory so you can refill before running out.
-
-## Navigation
-
-- Previous: [Today](03-Today.md)
-- Next: [Meal Times](05-Meal-Times.md)
+Track inventory so you can refill before running out. The medication's name and dose are shown for reference but can't be changed here.

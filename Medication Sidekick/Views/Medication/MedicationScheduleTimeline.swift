@@ -141,7 +141,7 @@ private struct ScheduleRowView: View {
     private var amountText: String {
         var parts: [String] = []
         if !medication.dosage.isEmpty { parts.append(medication.dosage) }
-        if medication.doseQuantity > 1 {
+        if medication.tracksStock && medication.doseQuantity > 1 {
             parts.append("\(medication.doseQuantity) \(medication.stockUnit.displayName.lowercased())")
         }
         return parts.isEmpty ? "Dose not set" : parts.joined(separator: " · ")

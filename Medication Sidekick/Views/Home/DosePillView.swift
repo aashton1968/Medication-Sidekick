@@ -7,16 +7,9 @@
 
 import SwiftUI
 import SwiftData
-import os.log
 
 struct DosePillView: View {
 
-    private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "MedicationSidekick",
-        category: "DosePill"
-    )
-
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
     @Environment(ThemeManager.self) private var themeManager
 
@@ -30,65 +23,61 @@ struct DosePillView: View {
         case .overdue:  theme.statusError
         case .due:      theme.accentTint
         case .upcoming: theme.textMuted
+        case .allDone:  theme.statusSuccess
         }
     }
 
-    private var medicationName: String {
-        state.dose.medication?.name ?? "Medication"
+    private var primaryText: String {
+        state.kind == .allDone ? "All doses taken today" : (state.dose?.medication?.name ?? "Medication")
     }
 
+    /// `.inline` is the system's own collapsed form — shown automatically while the tab's
+    /// content is scrolling, in place beside the tab bar items — so the content here just
+    /// needs to shrink to fit that narrower space rather than drive the collapse itself.
     var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(accent)
-                .frame(width: 10, height: 10)
-                .accessibilityHidden(true)
+        HStack(spacing: isInline ? 8 : 12) {
+            leadingIndicator
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(medicationName)
+            if isInline {
+                Text(primaryText)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
-                if !isInline {
-                    Text(state.statusText)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(accent)
+                    .minimumScaleFactor(0.8)
+            } else {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(primaryText)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
+                    if state.kind != .allDone {
+                        Text(state.statusText)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(accent)
+                            .lineLimit(1)
+                    }
                 }
-            }
 
-            Spacer(minLength: 8)
-
-            // Drawn explicitly: the accessory restyles system button styles into plain text.
-            Button(action: markTaken) {
-                Text("Taken")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(theme.bgBase)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 8)
-                    .background(theme.textPrimary, in: Capsule())
+                Spacer(minLength: 8)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Mark \(medicationName) as taken")
         }
-        .padding(.horizontal, 16)
-        .accessibilityElement(children: .contain)
+        .padding(.horizontal, isInline ? 10 : 16)
+        .accessibilityElement(children: .combine)
     }
 
-    private func markTaken() {
-        let dose = state.dose
-        InteractionGuard.markDoseInteraction()
-        dose.markAsTaken()
-        do {
-            try modelContext.save()
-            ToastManager.shared.showGeneral(
-                CongratsMessages.forSingleDose(medicationName: dose.medication?.name),
-                duration: 5.0
-            )
-            NotificationCenter.default.post(name: .medicationDidChange, object: nil)
-        } catch {
-            Self.logger.error("Failed to mark dose taken from pill: \(error.localizedDescription, privacy: .public)")
+    private var leadingIndicator: some View {
+        Group {
+            if state.kind == .allDone {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: isInline ? 14 : 16, weight: .semibold))
+                    .foregroundStyle(theme.statusSuccess)
+            } else {
+                Circle()
+                    .fill(accent)
+                    .frame(width: isInline ? 8 : 10, height: isInline ? 8 : 10)
+            }
         }
+        .accessibilityHidden(true)
     }
 }
 

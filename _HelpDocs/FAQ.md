@@ -2,7 +2,7 @@
 
 1. Scan the questions below for your issue.
 2. Follow linked pages for full instructions.
-3. If needed, continue to [Troubleshooting](08-Troubleshooting.md).
+3. If needed, see the Troubleshooting page.
 
 ## How do I add a medication?
 
@@ -23,8 +23,3 @@ Open Meal Times and edit the relevant item.
 ## Where can I change app behavior?
 
 Use Settings to control app-level preferences.
-
-## Navigation
-
-- Previous: [Settings](06-Settings.md)
-- Next: [Troubleshooting](08-Troubleshooting.md)

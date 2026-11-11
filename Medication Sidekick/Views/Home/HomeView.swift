@@ -72,6 +72,9 @@ struct HomeView: View {
         let today = calendar.startOfDay(for: now)
         let selectedDate = selectedDay.map { calendar.startOfDay(for: $0) } ?? today
         let doses = sortedDoses(for: selectedDate)
+        // Taken doses sink below the rest, each half keeping the same time/alpha order.
+        let notTakenDoses = doses.filter { $0.status != .taken }
+        let takenDoses = doses.filter { $0.status == .taken }
 
         return ScrollViewReader { proxy in
         List {
@@ -118,11 +121,26 @@ struct HomeView: View {
                 }
             }
 
-            // One flat list of cards ordered by due time (taken time once taken).
-            // DoseRow is a direct list row so swipe actions work.
-            Section {
-                ForEach(doses) { dose in
-                    DoseRow(dose: dose, mealTimeSettings: mealTimeSettings, now: now)
+            // Two groups of cards, each ordered by due time (alpha tiebreak): doses still
+            // needing action, then taken ones sunk below. DoseRow is a direct list row so
+            // swipe actions work.
+            if !notTakenDoses.isEmpty {
+                Section {
+                    ForEach(notTakenDoses) { dose in
+                        DoseRow(dose: dose, mealTimeSettings: mealTimeSettings, now: now)
+                    }
+                } header: {
+                    sectionHeader("Not Taken")
+                }
+            }
+
+            if !takenDoses.isEmpty {
+                Section {
+                    ForEach(takenDoses) { dose in
+                        DoseRow(dose: dose, mealTimeSettings: mealTimeSettings, now: now)
+                    }
+                } header: {
+                    sectionHeader("Taken")
                 }
             }
         }
@@ -141,20 +159,28 @@ struct HomeView: View {
 
     // MARK: - Helpers
 
-    /// The day's doses ordered by when they were due, or when they were taken once taken.
+    /// A section header matching the day title's look (used by `content(now:)`).
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.footnote.weight(.semibold))
+            .textCase(.uppercase)
+            .tracking(1.2)
+            .foregroundStyle(theme.textSecondary)
+    }
+
+    /// The day's doses ordered by when they're due, alphabetically where times tie.
+    /// Taken vs. not-taken is split out separately by `content(now:)`, so this keeps a
+    /// single consistent order for both groups rather than re-sorting taken doses by
+    /// when they were taken.
     private func sortedDoses(for day: Date) -> [MedicationDose] {
         let calendar = Self.calendar
-        func sortTime(_ dose: MedicationDose) -> Date {
-            dose.status == .taken ? (dose.takenTime ?? dose.scheduledDate) : dose.scheduledDate
-        }
         return deduplicatedDoses(
             weekDoses.filter {
                 $0.medication?.isActive == true && calendar.isDate($0.scheduledDate, inSameDayAs: day)
             }
         )
         .sorted { lhs, rhs in
-            let (l, r) = (sortTime(lhs), sortTime(rhs))
-            if l != r { return l < r }
+            if lhs.scheduledDate != rhs.scheduledDate { return lhs.scheduledDate < rhs.scheduledDate }
             return medicationDoseSortsBefore(lhs, rhs)
         }
     }

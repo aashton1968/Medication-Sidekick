@@ -36,6 +36,10 @@ final class Medication {
     var scheduledWeekdaysRaw: String = ""
 
     // MARK: - Stock / Inventory
+    /// Whether this medication's stock/dose-quantity fields are meaningful. Off for medications
+    /// like insulin where the dose varies per administration (e.g. carb-counted) and isn't a
+    /// fixed quantity this app can subtract from a running stock count.
+    var tracksStock: Bool = true
     var currentStock: Int = 0
     var doseQuantity: Int = 1
     var stockUnitRaw: String = StockUnit.tablets.rawValue
@@ -100,13 +104,14 @@ final class Medication {
     }
 
     var daysOfSupply: Int {
-        guard dailyConsumptionRate > 0 else { return Int.max }
+        guard tracksStock, dailyConsumptionRate > 0 else { return Int.max }
         let quotient = Double(currentStock) / dailyConsumptionRate
         let days = quotient.safeInt
         return max(days, 0)
     }
 
     var stockLevel: StockLevel {
+        guard tracksStock else { return .good }
         if currentStock <= 0 { return .empty }
         let days = daysOfSupply
         if days >= 14 { return .good }
@@ -125,6 +130,7 @@ final class Medication {
         startDate: Date = Date(),
         endDate: Date? = nil,
         medicationType: MedicationType = .tablet,
+        tracksStock: Bool = true,
         currentStock: Int = 0,
         doseQuantity: Int = 1,
         stockUnit: StockUnit = .tablets,
@@ -140,6 +146,7 @@ final class Medication {
         self.startDate = startDate
         self.endDate = endDate
         self.medicationTypeRaw = medicationType.rawValue
+        self.tracksStock = tracksStock
         self.currentStock = currentStock
         self.doseQuantity = doseQuantity
         self.stockUnitRaw = stockUnit.rawValue

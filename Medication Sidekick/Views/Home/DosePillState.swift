@@ -13,27 +13,34 @@ struct DosePillState {
         case overdue
         case due
         case upcoming
+        case allDone
     }
 
-    let dose: MedicationDose
+    /// `nil` only for `.allDone`, when there's no single dose left to point at.
+    let dose: MedicationDose?
     let kind: Kind
     /// Other doses that are also due or overdue right now.
     let moreCount: Int
 
-    /// Returns `nil` when nothing is left to take today.
+    /// Returns `nil` only when nothing at all is scheduled for today — the pill is
+    /// otherwise always shown, falling back to the next upcoming dose, then to
+    /// `.allDone` once every dose for the day has been taken or skipped.
     init?(doses: [MedicationDose], now: Date = Date()) {
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: now)
         guard let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) else { return nil }
         let grace = Constants.medicationMissedGracePeriod
 
-        let remaining = deduplicatedDoses(doses)
+        let today = deduplicatedDoses(doses)
             .filter { dose in
                 dose.medication?.isActive == true
-                    && (dose.status == .scheduled || dose.status == .missed)
                     && dose.scheduledDate >= startOfToday
                     && dose.scheduledDate < startOfTomorrow
             }
+        guard !today.isEmpty else { return nil }
+
+        let remaining = today
+            .filter { $0.status == .scheduled || $0.status == .missed }
             .sorted { $0.scheduledDate < $1.scheduledDate }
 
         let needingAction = remaining.filter { $0.scheduledDate <= now }
@@ -49,12 +56,14 @@ struct DosePillState {
             self.kind = .upcoming
             self.moreCount = 0
         } else {
-            return nil
+            self.dose = nil
+            self.kind = .allDone
+            self.moreCount = 0
         }
     }
 
     var timeText: String {
-        dose.scheduledDate.formatted(date: .omitted, time: .shortened)
+        dose?.scheduledDate.formatted(date: .omitted, time: .shortened) ?? ""
     }
 
     var statusText: String {
@@ -63,6 +72,7 @@ struct DosePillState {
         case .overdue:  text = "Overdue · \(timeText)"
         case .due:      text = "Due · \(timeText)"
         case .upcoming: text = "Next · \(timeText)"
+        case .allDone:  text = "All doses taken today"
         }
         if moreCount > 0 { text += " · +\(moreCount) more" }
         return text

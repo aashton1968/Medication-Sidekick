@@ -77,32 +77,36 @@ final class MedicationDose {
 
     // MARK: - Stock-Aware Status Transitions
 
-    /// Marks the dose as taken and decrements the parent medication's stock.
+    /// Marks the dose as taken and, for medications that track stock, decrements it.
     func markAsTaken(at time: Date = Date()) {
         guard status != .taken else { return }
-        let qty = medication?.doseQuantity ?? 0
         status = .taken
         takenTime = time
-        deductedQuantity = qty
         updatedAt = Date()
-        if let medication, qty > 0 {
+        guard let medication, medication.tracksStock else {
+            deductedQuantity = 0
+            return
+        }
+        let qty = medication.doseQuantity
+        deductedQuantity = qty
+        if qty > 0 {
             medication.currentStock = max(0, medication.currentStock - qty)
             medication.updatedAt = Date()
         }
     }
 
-    /// Reverts a taken dose back to scheduled and restores the parent medication's stock.
+    /// Reverts a taken dose back to scheduled and, for medications that track stock, restores it.
     func undoTaken() {
         guard status == .taken else { return }
-        let restoreQty = deductedQuantity > 0 ? deductedQuantity : (medication?.doseQuantity ?? 1)
         status = .scheduled
         takenTime = nil
-        deductedQuantity = 0
         updatedAt = Date()
-        if let medication {
+        if let medication, medication.tracksStock {
+            let restoreQty = deductedQuantity > 0 ? deductedQuantity : medication.doseQuantity
             medication.currentStock += restoreQty
             medication.updatedAt = Date()
         }
+        deductedQuantity = 0
     }
 
     func markAsSkipped() {
