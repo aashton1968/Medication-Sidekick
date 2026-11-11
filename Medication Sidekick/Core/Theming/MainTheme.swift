@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct Main: ThemeProtocol {
    
@@ -35,7 +36,14 @@ struct Main: ThemeProtocol {
 
     // Semantic status tokens
     var statusSuccess: Color { Color(hex: "#009999") }
-    var statusError: Color { Color(hex: "#b30000")  }
+    /// Dark red in light mode; a lighter red in dark mode so text and dots stay legible on dark surfaces.
+    var statusError: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 1.0, green: 0.42, blue: 0.40, alpha: 1)   // #FF6B66
+                : UIColor(red: 0.70, green: 0.0, blue: 0.0, alpha: 1)    // #B30000
+        })
+    }
     var statusInfo: Color { textSecondary }
 
     // Semantic shadow tokens
