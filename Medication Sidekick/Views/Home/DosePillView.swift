@@ -52,7 +52,7 @@ struct DosePillView: View {
                         .lineLimit(1)
                     if state.kind != .allDone {
                         Text(state.statusText)
-                            .font(.caption.weight(.medium))
+                            .font(.caption.weight(state.kind == .overdue ? .heavy : .medium))
                             .foregroundStyle(accent)
                             .lineLimit(1)
                     }

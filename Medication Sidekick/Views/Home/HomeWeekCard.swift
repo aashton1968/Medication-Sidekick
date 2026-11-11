@@ -99,7 +99,7 @@ struct HomeWeekCard: View {
                     Spacer(minLength: 8)
 
                     Text(item.time, style: .time)
-                        .font(.subheadline.monospacedDigit())
+                        .font(.subheadline.weight(item.isOverdue ? .semibold : .regular).monospacedDigit())
                         .foregroundStyle(item.isOverdue ? theme.statusError : theme.textSecondary)
                 }
             }
