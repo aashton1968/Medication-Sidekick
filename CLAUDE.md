@@ -11,7 +11,7 @@ This project has a single developer who works across two machines; the project f
 This is an iOS app built with Xcode. There are no test targets.
 
 - **Build/Run**: Open `Medication Sidekick.xcodeproj` in Xcode and use ⌘R or the scheme selector.
-- **Version bump**: `bash _set-version-bump.sh` — sets marketing version and generates a date-based build number via `agvtool`.
+- **Version bump**: edit `VERSION` in `Config.xcconfig` by hand for a new marketing version; `BUILD_NUMBER` is rewritten automatically by `version.sh`, run as an Archive pre-action in the Medication Sidekick scheme. See `versionNumber.md` for the full setup.
 
 ## Coding Standards
 

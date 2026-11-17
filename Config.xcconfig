@@ -1,0 +1,12 @@
+//
+//  Config.xcconfig
+//  Medication Sidekick
+//
+//  Single source of truth for the version numbers. The target reads these through
+//  MARKETING_VERSION = $(VERSION) and CURRENT_PROJECT_VERSION = $(BUILD_NUMBER).
+//  VERSION is edited by hand; BUILD_NUMBER is rewritten by version.sh (YYYYMMDD + daily counter)
+//  as an Archive pre-action in the Medication Sidekick scheme. Keep the "BUILD_NUMBER =" line format.
+//
+
+VERSION = 1.8
+BUILD_NUMBER = 2026111701
