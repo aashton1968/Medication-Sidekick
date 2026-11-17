@@ -8,9 +8,10 @@ This project has a single developer who works across two machines; the project f
 
 ## Build & Run
 
-This is an iOS app built with Xcode. There are no test targets.
+This is an iOS app built with Xcode, with one test target: `Medication SidekickTests` (`MedicationRefillReminderServiceTests`, `MedicationTimeZoneTests`, `SubscriptionServiceTests`), run via the `Medication Sidekick.xctestplan` test plan.
 
 - **Build/Run**: Open `Medication Sidekick.xcodeproj` in Xcode and use ⌘R or the scheme selector.
+- **Test**: `xcodebuild test -scheme "Medication Sidekick" -destination "platform=iOS Simulator,name=iPhone 17 Pro Max"`
 - **Version bump**: edit `VERSION` in `Config.xcconfig` by hand for a new marketing version; `BUILD_NUMBER` is rewritten automatically by `version.sh`, run as an Archive pre-action in the Medication Sidekick scheme. See `versionNumber.md` for the full setup.
 
 ## Coding Standards
