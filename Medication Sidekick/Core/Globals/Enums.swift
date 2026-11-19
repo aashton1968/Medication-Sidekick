@@ -53,7 +53,7 @@ enum MealTime: String, Codable, CaseIterable {
     case bedTime
     case asNeeded
 
-    var displayName: String {
+    nonisolated var displayName: String {
         switch self {
         case .preBreakfast: return "Pre-Breakfast"
         case .breakfast:    return "Morning"
@@ -65,7 +65,7 @@ enum MealTime: String, Codable, CaseIterable {
         }
     }
 
-    var defaultDateComponents: DateComponents {
+    nonisolated var defaultDateComponents: DateComponents {
         switch self {
         case .preBreakfast: return DateComponents(hour: 6, minute: 30)
         case .breakfast:    return DateComponents(hour: 7, minute: 0)
