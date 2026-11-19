@@ -69,6 +69,10 @@ struct DoseRow: View {
         return String(format: "Late %d:%02d", minutes / 60, minutes % 60)
     }
 
+    /// True once `lateText` has something to show — i.e. the dose is overdue or missed.
+    /// Drives the red card border so late items stand out in the list, not just their text.
+    private var isLate: Bool { lateText != nil }
+
     /// "500 mg · Take with food": dosage first, then instructions when there are any.
     private var detailText: String? {
         let dosage = dose.medication?.dosage.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -138,9 +142,20 @@ struct DoseRow: View {
         .listRowInsets(EdgeInsets())
         .listRowSeparator(.hidden)
         .listRowBackground(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(theme.surfaceBase)
-                .premiumCardShadow(theme: theme)
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(theme.surfaceBase)
+                // A leading accent stripe rather than a full outline: a full border on
+                // every late card reads as a doubled line where two late cards stack
+                // close together, since listRowSpacing is tighter than two card borders.
+                if isLate {
+                    Rectangle()
+                        .fill(theme.statusError)
+                        .frame(width: 4)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .premiumCardShadow(theme: theme)
         )
         .contextMenu {
             if dose.status == .scheduled || dose.status == .skipped {
